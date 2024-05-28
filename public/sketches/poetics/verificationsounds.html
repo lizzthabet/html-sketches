@@ -61,10 +61,21 @@
       }
     </style>
     <script>
+      function centerOnScreen(width = 0, height = 0) {
+        const centerScreenTop = window.screen.availHeight / 2 + window.screenTop
+        const centerScreenLeft = window.screen.availWidth / 2 + window.screenLeft
+        const top = centerScreenTop - height / 2
+        const left = centerScreenLeft - width / 2
+        return { top, left }
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         const open = document.getElementById("start-it")
+        const popupHeight = 640 + 100 // account for the "outer width" of the window
+        const popupWidth = 540
+        const { left, top } = centerOnScreen(popupWidth, popupHeight)
         open.addEventListener("click", () => {
-          window.open(`./popups/selection.html`, "_blank", `popup=true,innerWidth=540,innerHeight=640,name="verification,top=150,left=500"`)
+          window.open(`./popups/selection.html`, "_blank", `popup=true,innerWidth=${popupWidth},innerHeight=${popupHeight - 100},name="verification,top=${top},left=${left}"`)
         })
       })
     </script>
@@ -74,7 +85,7 @@
       <a href="/">back</a>
     </nav>
     <main class="main">
-      <h1 class="title">Sounds of human verification</h1>
+      <h1 class="title">Let's confirm that you are human</h1>
       <p>Pop-ups must be enabled and sound turned on</p>
       <p class="verify-instruction">Please check the box below to proceed</p>
       <button id="start-it" class="verify-box">

@@ -41,29 +41,60 @@
         padding: 0;
       }
 
+      .click-me.clicked {
+        border: 5px inset goldenrod;
+      }
+
       .captcha {
         height: 100%;
         width: 100%;
       }
     </style>
     <script>
+      const POPUP_OUTERHEIGHT = 310
+      const POPUP_HEIGHT = 250
+      const POPUP_WIDTH = 200
+
       function random(min, max) {
         return Math.round(Math.random() * (max - min) + min)
       }
-      function randomWidth() {
-        return random(-600, 600)
+
+      function getNextPlacement(quad = 0) {
+        const extra = 200
+        const minX = window.screenLeft - POPUP_WIDTH - extra
+        const maxX = window.screenLeft + window.outerWidth + POPUP_WIDTH
+        const minY = window.screenTop - POPUP_OUTERHEIGHT - extra
+        const maxY = window.screenTop + window.outerHeight + POPUP_OUTERHEIGHT
+        // console.log(`minX: ${minX}, maxX: ${maxX}, minY: ${minY}, maxY: ${maxY}`)
+        switch (quad) {
+          case 0:
+            return { left: random(minX, window.screenLeft), top: random(minY, maxY) }
+          case 1:
+            return { left: random(minX, maxX), top: random(window.screenTop + window.outerHeight, maxY) }
+          case 2:
+            return { left: random(window.screenLeft + window.outerWidth, maxX), top: random(minY, maxY) }
+          case 3:
+            return { left: random(minX, maxX), top: random(minY, window.screenTop) }
+        }
       }
-      function randomHeight() {
-        return random(-450, 450)
-      }
-      const POPUP_HEIGHT = 250
-      const POPUP_WIDTH = 200
+
+      let popupCount = 0
       document.addEventListener("DOMContentLoaded", () => {
+        window.name = "captcha"
         const buttons = document.querySelectorAll("button")
-        const test = buttons.item(0)
         buttons.forEach((button, i) => {
-          button.addEventListener("click", () => {
-            window.open(`./${i + 1}.html`, "_blank", `popup=true,innerWidth=${POPUP_WIDTH},innerHeight=${POPUP_HEIGHT},left=${randomWidth()},top=${randomHeight()}`)
+          button.addEventListener("click", (e) => {
+            if (e.currentTarget) {
+              if (e.currentTarget.classList.contains("clicked")) {
+                e.currentTarget.classList.remove("clicked")
+              } else {
+                e.currentTarget.classList.add("clicked")
+              }
+            }
+            const { left, top } = getNextPlacement(popupCount % 4)
+            // console.log(`left: ${left}, top: ${top} for #${popupCount}`)
+            window.open(`./${i + 1}.html`, "_blank", `popup=true,innerWidth=${POPUP_WIDTH},innerHeight=${POPUP_HEIGHT},left=${left},top=${top}`)
+            popupCount++
           })
         })
       })
@@ -84,7 +115,6 @@
         <button class="click-me"><img class="captcha" src="../assets/guest8.png"/></button>
         <button class="click-me"><img class="captcha" src="../assets/guest9.png"/></button>
       </figure>
-
     </main>
   </body>
 </html>
