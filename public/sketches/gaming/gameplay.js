@@ -3,7 +3,11 @@ const UP = 'up'
 const DOWN = 'down'
 const LEFT = 'left'
 const RIGHT = 'right'
-const WINDOW_VIEW_GRID_BUFFER = 3;
+const WINDOW_VIEW_GRID_BUFFER = 5;
+const EVENT_MOVE_UP = 'move-up'
+const EVENT_MOVE_DOWN = 'move-down'
+const EVENT_MOVE_LEFT = 'move-left'
+const EVENT_MOVE_RIGHT = 'move-right'
 
 // Note: this code is pretty tightly coupled with the CSS
 // and document structure of the game pages that import it.
@@ -65,20 +69,21 @@ function showOrHideSelectorList(selector, visible = true) {
   elements.forEach(e => toggleHiddenClass(e, visible))
 }
 
-// TODO: I'm probably gonna need to refactor this to better
-// handle how text from multiple nodes may be triggered at
-// the same. It could move to a global direction queue, possibly?
-// Maybe with a global state = "animatingTextInProgress"?
-function displayOneByOne(
-  htmlList,
-  { append, after } = { append: false, after: () => {} }
-) {
+function displayOneByOne(htmlList, { append, after } = { append: false, after: () => {} }) {
+  // Because there might be multiple timeout processes trying
+  // to write to the same element, clear the existing timeout process
+  // and only proceed with the current one
+  if (state.animatingTextInProgress) {
+    clearTimeout(state.animatingTextInProgress)
+    state.animatingTextInProgress = null
+  }
+
   if (!Array.isArray(htmlList)) {
     console.warn("Displaying elements one-by-one requires a list of elements")
     return
   }
 
-  if (htmlList.length === 0) {
+  if (htmlList.length === 0) { 
     if (after) {
       after()
     }
@@ -89,7 +94,9 @@ function displayOneByOne(
   // one-by-one to the direction
   const htmlString = htmlList.shift()
   updateDirection(htmlString, { append })
-  setTimeout(() => displayOneByOne(htmlList, { append: true, after }), 250)
+  const timeOutId = setTimeout(() => displayOneByOne(htmlList, { append: true, after }), 250)
+  // Track the timeout id on the state field "animatingTextInProgress"
+  state.animatingTextInProgress = timeOutId
 }
 
 // Display the #next node and add an active area to game state
@@ -174,6 +181,35 @@ function positionOnGridBySelector(selector, positions) {
   })
 }
 
+// Returns {startX, startY, endX?, endY?} in grid coordinates for
+// an element to be used in calculations, like obstacle definition
+function getPositionOnGrid(element) {
+  const { scrollX, scrollY } = window
+  const { top, left, width, height } = element.getBoundingClientRect()
+  const position = {
+    startX: pixelsToGrid(scrollX + left),
+    startY: pixelsToGrid(scrollY + top)
+  }
+  if (width > GRID_SIZE_PX) {
+    const widthExceedingCell = width - GRID_SIZE_PX
+    position.endX = pixelsToGrid(scrollX + left + widthExceedingCell)
+  }
+
+  if (height > GRID_SIZE_PX) {
+    const heightExceedingCell = height - GRID_SIZE_PX
+    position.endY = pixelsToGrid(scrollY + top + heightExceedingCell)
+  }
+
+  return position
+}
+
+function getPositionOnGridBySelector(selector) {
+  const element = document.querySelector(selector)
+  if (element) {
+    return getPositionOnGrid(element)
+  }
+}
+
 // Helper for defining an active area; returns:
 // {startX, startY, endX, endY, activation}.
 // Note: this only handles centering a 1x1 grid cell
@@ -185,6 +221,10 @@ function createActiveArea(
 ) {
   if (!point || !activeFunc) {
     console.warn("Cannot create active area with missing information")
+  }
+  
+  if (typeof point.x !== "number" || typeof point.y !== "number") {
+    console.warn("Cannot create active area with invalid coordinates")
   }
 
   const area = {
@@ -286,6 +326,7 @@ function scrollIntoView(element, x, y) {
     y < minYGridInView ||
     y > maxYGridInView
   ) {
+    // console.log(`(${x}, ${y}) x: ${minXGridInView}-${maxXGridInView}, y: ${minYGridInView}-${maxYGridInView}`)
     element.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })
     return
   }
@@ -303,12 +344,12 @@ function scrollIntoView(element, x, y) {
     scroll = true
     scrollOptions.left = x <= minXGridBuffer ? -GRID_SIZE_PX : GRID_SIZE_PX
   }
-  if ( y <= minYGridBuffer || y >= maxYGridBuffer) {
+  if (y <= minYGridBuffer || y >= maxYGridBuffer) {
     scroll = true
-    scrollOptions.top = y <= minXGridBuffer ? -GRID_SIZE_PX : GRID_SIZE_PX
+    scrollOptions.top = y <= minYGridBuffer ? -GRID_SIZE_PX : GRID_SIZE_PX
   }
   if (scroll) {
-    // console.log(`x: ${minXGridInView}-${maxXGridInView}, y: ${minYGridInView}-${maxYGridInView}`)
+    // console.log(`(${x}, ${y}) x: ${minXGridBuffer}-${maxXGridBuffer}, y: ${minYGridBuffer}-${maxYGridBuffer}`)
     // console.log("scroll options:", scrollOptions)
     window.scrollBy(scrollOptions)
   }
@@ -352,7 +393,6 @@ function moveDirectionOnGrid(element, direction) {
 }
 
 function onArrowButtonClick(direction) {
-  console.log("direction", direction)
   const you = document.getElementById("you")
   switch(direction) {
     case UP:
@@ -412,6 +452,30 @@ function onKeyDown(event) {
   }
 }
 
+// Controls for the game may exist outside this scene,
+// so listen for events and respond to them
+window.addEventListener("message", (event) => {
+  // Only allow messages from same-origin
+  if (event.origin !== window.location.origin) {
+    return
+  }
+
+  switch(event.data) {
+    case EVENT_MOVE_UP:
+      onArrowButtonClick(UP)
+      return
+    case EVENT_MOVE_DOWN:
+      onArrowButtonClick(DOWN)
+      return
+    case EVENT_MOVE_LEFT:
+      onArrowButtonClick(LEFT)
+      return
+    case EVENT_MOVE_RIGHT:
+      onArrowButtonClick(RIGHT)
+      return
+  }
+})
+
 // Just for dev :)
 // This lets me drag elements around and then just print
 // their grid positions to paste into code config,
@@ -470,20 +534,4 @@ function printPositions(sort = false, selector) {
       console.error("could not copy dev helper to clipboard", error)
     }
   }
-}
-
-function setUpMainAudio(autoplay = true) {
-  const mainAudioTrack = new Audio("../assets/static-chirps.m4a")
-  mainAudioTrack.preload = "auto"
-  mainAudioTrack.loop = true
-  mainAudioTrack.autoplay = autoplay
-  return mainAudioTrack
-}
-
-function setUpMelody(autoplay = true) {
-  const melodyTrack = new Audio("../assets/melody-strum.m4a")
-  melodyTrack.preload = "auto"
-  melodyTrack.loop = true
-  melodyTrack.autoplay = autoplay
-  return melodyTrack
 }
