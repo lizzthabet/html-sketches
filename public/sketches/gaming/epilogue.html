@@ -17,23 +17,44 @@
         display: inline-block;
         font-size: 1.125rem;
         margin: 1px;
+        max-width: 500px;
         padding: 10px;
         z-index: 2;
       }
 
-      .wave.move-direction {
-        /* a bit hacky? */
-        position: relative;
-        bottom: -11px; 
+      .info.info-mini {
+        font-size: 0.9rem;
+        z-index: -2;
+      }
+      .info.info-mini > code {
+        font-size: 0.8rem;
       }
 
-      .overlap-content {
+      .wave.move-direction {
+        /* a bit hacky for sure */
         position: relative;
-        left: 0;
+        bottom: -10px; 
+      }
+
+      .move-direction {
+        border-radius: 3px;
+        border: 1px outset buttonborder;
+      }
+
+      .veil-landscape {
+        background:
+          linear-gradient(to right, transparent 650px, white 1000px),
+          linear-gradient(to bottom, transparent 650px, white 900px);
+        height: 100vh;
+        position: fixed;
+        overflow: hidden;
+        top: 0;
+        right: 0;
+        width: 100vw;
+        z-index: -1;
       }
     </style>
     <script>
-      const CHOSEN_PALETTE = [ "darkgreen", "green", "forestgreen", "blue", "mediumblue", "royalblue", "gray", "darkgray", "silver", "lightgray", "dodgerblue", "deepskyblue", "darkviolet", "blueviolet", "darkorchid", "mediumpurple", "mediumorchid", "violet", "mediumslateblue", "slateblue", "darkslateblue", "deeppink", "hotpink", "palevioletred", "crimson", "orangered", "tomato", "orange", "darkorange", "gold", "darkkhaki", "rosybrown", "burlywood", "goldenrod", "chocolate", "saddlebrown", "sienna", "peru", "steelblue", "dimgray", "slategray", "darkslategray", "olivedrab", "darkolivegreen", "midnightblue", "mediumaquamarine", "limegreen", "yellowgreen", "salmon", "lightcoral", "indianred", "darksalmon", "thistle", "lavender", "plum", "pink", "orchid", "mediumseagreen", "brown", "lightsteelblue", "paleturquoise", "darkturquoise", "darkcyan", "turquoise", "springgreen"]
       const COLOR_PALETTE = ["sienna", "green", "blue", "gray", "wheat", "goldenrod", "purple", "violet", "wave", "wave-inverse"]
       const LANDSCAPE_KEY = 'landscape'
 
@@ -41,12 +62,24 @@
         "#you": [{ x: 2, y: 12 }],
         ".info": [
           { x: 2, y: 3, center: false },
-          { x: 2, y: 5, center: false },
+          { x: 2, y: 4, center: false },
+          { x: 2, y: 6, center: false },
+          { x: 2, y: 8, center: false },
+          { x: 2, y: 15, center: false },
         ],
-        ".cell": [],
+        "#explore": [{ x: 10, y: 12, center: false }],
       }
 
-      const activeAreasToCreate = []
+      const activeAreasToCreate = [
+        {
+          point: {
+            x: initialPositions["#explore"][0].x - 1,
+            y: initialPositions["#explore"][0].y - 1,
+          },
+          activation: onExploreClick,
+          options: { height: 3, width: 4, center: false },
+        },
+      ]
 
       const state = {
         boundaries: [{ startX: 0, startY: 0 }],
@@ -55,7 +88,7 @@
         activeAreas: [],
         landscapeMap: {},
         newLandscapeMap: {}, // indexed by location, { position: {startX, startY}, color: ''}
-        newLandscapeColor: COLOR_PALETTE[0],
+        newLandscapeColor: COLOR_PALETTE[9],
       }
 
       function toggleGrid() {
@@ -131,6 +164,10 @@
         }
       }
 
+      function resetSavedLandscape() {
+        localStorage.removeItem(LANDSCAPE_KEY)
+      }
+
       function addToSavedLandscape(position, color) {
         const landscape = getSavedLandscape()
         const id = createIdFromPosition(position)
@@ -159,6 +196,7 @@
         if (alreadyExists && isFromCurrentSession) {
           // Remove cell from the landscape
           removeCellFromGrid(alreadyExists)
+          delete state.newLandscapeMap[landscapeId]
           removeFromSavedLandscape(landscapeId)
         } else if (!alreadyExists) {
           // Add cell to the landscape
@@ -182,6 +220,22 @@
 
         if (["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].includes(event.key)) {
           changeCurrentColor(parseInt(event.key, 10))
+        }
+      }
+
+      function onExploreClick() {
+        // Remove the obstacle definition for the button
+        // TODO: This shouldn't be so hardcoded lol
+        state.obstacles.pop()
+        // Disappear the landscape white background gradient
+        const landscapeVeil = document.querySelector(".veil-landscape")
+        if (landscapeVeil) {
+          toggleHiddenClass(landscapeVeil, false)
+        }
+        // Disappear the explore button
+        const explore = document.getElementById("explore")
+        if (explore) {
+          toggleHiddenClass(explore, false)
         }
       }
 
@@ -274,7 +328,6 @@
         // Add elements to the landscape based on avatar position
         document.addEventListener("keydown", onSpaceOrNumberPress)
 
-
         // Just for dev
         // printWholeColorPalletes()
       })
@@ -285,7 +338,7 @@
       <a href="/">back</a>
     </nav>
     <main>
-      <p id="direction" class="">You've crossed an ocean to be here.</p>
+      <!-- <p id="direction" class="">You've crossed an ocean to be here.</p>
       <p class="info">
         This is a messy prototype of a game epilogue for <i>Meet me on the deep net</i>, <br/>
         where I'd like to offer you the chance to contribute to a landscape filled with <br/>
@@ -296,31 +349,42 @@
         <code>WASD</code> or the arrow keys. Press <code>space</code> to place a color in the landscape. <br/>
         Press it again to remove it. You can only remove the colors you've added in <br/>
         this session.
-      </p>
+      </p> -->
+      <p class="info" data-obstacle>Welcome, stranger.</p>
+      <p class="info" data-obstacle>You've crossed an ocean to be here. Or rather, your browser has crossed an ocean to meet my tiny web server running on a tiny computer on a desk in my house.</p>
+      <p class="info" data-obstacle>Wanna explore? Leave a piece of earth behind? This place is filled with islands from other strangers who have made this journey and created places for you to visit.</p>
+      <p class="info" data-obstacle>Here, you, too, can create your own island for future strangers to cross an ocean to meet.</p>
+      <p class="info info-mini" data-obstacle>ps. I haven't written instructions yet oops. Navigate <u><b>you</b></u> with the arrow keys. Press <code>space</code> to place a tile, and press it again to remove the tile. Press any number <code>0</code>-<code>9</code> on your keyboard or use the palette buttons to change the current tile color.</p>
       <figure id="you" class="cell center">you</figure>
+      <button id="explore" class="cell two-cell-h fade" onclick="onExploreClick()" data-obstacle>explore</button>
+      <div class="veil-landscape fade" aria-hidden="true"></div>
     </main>
 
     <section role="toolbar" class="controls">
-      <details class="controls-details" open>
-        <summary class="controls-label">
-          controls
-        </summary>
+      <details class="controls-details">
+        <summary class="controls-label">palette</summary>
         <button class="move-direction" style="background-color: sienna; color: white;" aria-label="select brown" onclick="changeCurrentColor(1)">1</button>
         <button class="move-direction" style="background-color: green; color: white;" aria-label="select green" onclick="changeCurrentColor(2)">2</button>
         <button class="move-direction" style="background-color: blue; color: white;" aria-label="select blue" onclick="changeCurrentColor(3)">3</button>
-        <button class="move-direction" style="background-color: gray;" aria-label="select gray" onclick="changeCurrentColor(4)">4</button>
+        <button class="move-direction" style="background-color: gray; color: white;" aria-label="select gray" onclick="changeCurrentColor(4)">4</button>
         <button class="move-direction" style="background-color: wheat;" aria-label="select yellow" onclick="changeCurrentColor(5)">5</button>
         <button class="move-direction" style="background-color: goldenrod;" aria-label="select gold" onclick="changeCurrentColor(6)">6</button>
         <button class="move-direction" style="background-color: purple; color: white;" aria-label="select purple" onclick="changeCurrentColor(7)">7</button>
         <button class="move-direction" style="background-color: violet;" aria-label="select violet" onclick="changeCurrentColor(8)">8</button>
         <button class="move-direction wave" aria-label="select wave" onclick="changeCurrentColor(9)">9</button>
         <button class="move-direction wave wave-inverse" aria-label="select wave with blue background" onclick="changeCurrentColor(0)">0</button>
+      </details>
+      <details class="controls-details">
+        <summary class="controls-label">
+          controls
+        </summary>
         <button class="move-direction" aria-label="place earth" onclick="editLandscape()">s</button>
         <button class="move-direction" aria-label="move up" onclick="onArrowButtonClick('up')">↑</button>
         <button class="move-direction" aria-label="move left" onclick="onArrowButtonClick('left')">←</button>
         <button class="move-direction" aria-label="move right" onclick="onArrowButtonClick('right')">→</button>
         <button class="move-direction" aria-label="move down" onclick="onArrowButtonClick('down')">↓</button>
         <!-- FOR DEV ONLY -->
+        <button class="toggle" onclick="resetSavedLandscape()">reset</button>
         <!-- <button class="toggle" onclick="printPositions()">print (dev)</button> -->
         <!-- <button class="toggle" onclick="toggleGrid()">toggle grid</button> -->
       </details>
