@@ -47,6 +47,8 @@ fieldset {
 
 .hidden-with-fade {
   opacity: 0 !important;
+  user-select: none;
+  pointer-events: none;
 }
 
 /* To be used with .hidden-with-fade,
@@ -82,11 +84,23 @@ while keeping .fade */
   text-align: right;
 }
 
-/* TODO: Improve mobile experience! */
+.controls-details {
+  padding: 1rem;
+}
+
+.controls-details[open] > .controls-label {
+  margin-bottom: 1rem;
+}
+
+.controls-label {
+  cursor: pointer;
+}
+
 .move-direction {
+  text-align: center;
   font-size: 1.5rem;
-  height: 30px;
-  width: 30px;
+  height: 50px;
+  width: 50px;
   padding: 2px;
 }
 

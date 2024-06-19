@@ -20,11 +20,21 @@
         padding: 10px;
         z-index: 2;
       }
+
+      .wave.move-direction {
+        /* a bit hacky? */
+        position: relative;
+        bottom: -11px; 
+      }
+
+      .overlap-content {
+        position: relative;
+        left: 0;
+      }
     </style>
     <script>
-      const COLORS = ["E6E6FA","D8BFD8","DDA0DD","EE82EE","DA70D6","FF00FF","BA55D3","9370DB","8A2BE2","9400D3","9932CC","8B008B","800080","4B0082","483D8B","6A5ACD","7B68EE","FFC0CB","FFB6C1","FF69B4","FF1493","DB7093","C71585","FFA07A","FA8072","E9967A","F08080","CD5C5C","DC143C","B22222","8B0000","FF0000","FF4500","FF6347","FF7F50","FF8C00","FFA500","FFFF00","FFFFE0","FFFACD","FAFAD2","FFEFD5","FFE4B5","FFDAB9","EEE8AA","F0E68C","BDB76B","FFD700","FFF8DC","FFEBCD","FFE4C4","FFDEAD","F5DEB3","DEB887","D2B48C","BC8F8F","F4A460","DAA520","B8860B","CD853F","D2691E","8B4513","A0522D","A52A2A","800000","556B2F","808000","6B8E23","9ACD32","32CD32","00FF00","7CFC00","7FFF00","ADFF2F","00FF7F","00FA9A","90EE90","98FB98","8FBC8F","3CB371","2E8B57","228B22","008000","006400","66CDAA","00FFFF","00FFFF","E0FFFF","AFEEEE","7FFFD4","40E0D0","48D1CC","00CED1","20B2AA","5F9EA0","008B8B","008080","B0C4DE","B0E0E6","ADD8E6","87CEEB","87CEFA","00BFFF","1E90FF","6495ED","4682B4","4169E1","0000FF","0000CD","00008B","000080","191970","FFFAFA","F0FFF0","F5FFFA","F0FFFF","F0F8FF","F8F8FF","F5F5F5","FFF5EE","F5F5DC","FDF5E6","FFFAF0","FFFFF0","FAEBD7","FAF0E6","FFF0F5","FFE4E1","DCDCDC","D3D3D3","C0C0C0","A9A9A9","808080","696969","778899","708090","2F4F4F"]
-      const COLOR_NAMES = ["Lavender","Thistle","Plum","Violet","Orchid","Fuchsia","Magenta","MediumOrchid","MediumPurple","BlueViolet","DarkViolet","DarkOrchid","DarkMagenta","Purple","Indigo","DarkSlateBlue","SlateBlue","MediumSlateBlue","Pink","LightPink","HotPink","DeepPink","PaleVioletRed","MediumVioletRed","LightSalmon","Salmon","DarkSalmon","LightCoral","IndianRed","Crimson","FireBrick","DarkRed","Red","OrangeRed","Tomato","Coral","DarkOrange","Orange","Yellow","LightYellow","LemonChiffon","LightGoldenrodYellow","PapayaWhip","Moccasin","PeachPuff","PaleGoldenrod","Khaki","DarkKhaki","Gold","Cornsilk","BlanchedAlmond","Bisque","NavajoWhite","Wheat","BurlyWood","Tan","RosyBrown","SandyBrown","Goldenrod","DarkGoldenrod","Peru","Chocolate","SaddleBrown","Sienna","Brown","Maroon","DarkOliveGreen","Olive","OliveDrab","YellowGreen","LimeGreen","Lime","LawnGreen","Chartreuse","GreenYellow","SpringGreen","MediumSpringGreen","LightGreen","PaleGreen","DarkSeaGreen","MediumSeaGreen","SeaGreen","ForestGreen","Green","DarkGreen","MediumAquamarine","Aqua","Cyan","LightCyan","PaleTurquoise","Aquamarine","Turquoise","MediumTurquoise","DarkTurquoise","LightSeaGreen","CadetBlue","DarkCyan","Teal","LightSteelBlue","PowderBlue","LightBlue","SkyBlue","LightSkyBlue","DeepSkyBlue","DodgerBlue","CornflowerBlue","SteelBlue","RoyalBlue","Blue","MediumBlue","DarkBlue","Navy","MidnightBlue","White","Snow","Honeydew","MintCream","Azure","AliceBlue","GhostWhite","WhiteSmoke","Seashell","Beige","OldLace","FloralWhite","Ivory","AntiqueWhite","Linen","LavenderBlush","MistyRose","Gainsboro","LightGray","Silver","DarkGray","Gray","DimGray","LightSlateGray","SlateGray","DarkSlateGray","Black"]
       const CHOSEN_PALETTE = [ "darkgreen", "green", "forestgreen", "blue", "mediumblue", "royalblue", "gray", "darkgray", "silver", "lightgray", "dodgerblue", "deepskyblue", "darkviolet", "blueviolet", "darkorchid", "mediumpurple", "mediumorchid", "violet", "mediumslateblue", "slateblue", "darkslateblue", "deeppink", "hotpink", "palevioletred", "crimson", "orangered", "tomato", "orange", "darkorange", "gold", "darkkhaki", "rosybrown", "burlywood", "goldenrod", "chocolate", "saddlebrown", "sienna", "peru", "steelblue", "dimgray", "slategray", "darkslategray", "olivedrab", "darkolivegreen", "midnightblue", "mediumaquamarine", "limegreen", "yellowgreen", "salmon", "lightcoral", "indianred", "darksalmon", "thistle", "lavender", "plum", "pink", "orchid", "mediumseagreen", "brown", "lightsteelblue", "paleturquoise", "darkturquoise", "darkcyan", "turquoise", "springgreen"]
+      const COLOR_PALETTE = ["sienna", "green", "blue", "gray", "wheat", "goldenrod", "purple", "violet", "wave", "wave-inverse"]
       const LANDSCAPE_KEY = 'landscape'
 
       const initialPositions = {
@@ -39,13 +49,13 @@
       const activeAreasToCreate = []
 
       const state = {
-        boundaries: [], // there should be a boundary for the top and left of the page
+        boundaries: [{ startX: 0, startY: 0 }],
         obstacles: [],
         activeArea: null,
         activeAreas: [],
         landscapeMap: {},
         newLandscapeMap: {}, // indexed by location, { position: {startX, startY}, color: ''}
-        newLandscapeColor: '',
+        newLandscapeColor: COLOR_PALETTE[0],
       }
 
       function toggleGrid() {
@@ -61,8 +71,8 @@
         return list[Math.round(Math.random() * (list.length - 1))]
       }
 
-      function setLandscapeColor() {
-        state.newLandscapeColor = getRandomElement(CHOSEN_PALETTE)
+      function setRandomColor() {
+        state.newLandscapeColor = getRandomElement(COLOR_PALETTE)
       }
 
       function createIdFromPosition(pos) {
@@ -86,7 +96,13 @@
         // Set the position to the avatar's
         positionOnGrid(element, position.startX, position.startY)
         setPositionAbsolute(element)
-        element.style.setProperty("background-color", color)
+        if (color === "wave") {
+          element.classList.add("wave")
+        } else if (color === "wave-inverse") {
+          element.classList.add("wave", "wave-inverse")
+        } else {
+          element.style.setProperty("background-color", color)
+        }
         // Add to the landscape
         const parentElement = getCellParent()
         parentElement.appendChild(element)
@@ -97,32 +113,6 @@
       function removeCellFromGrid(element) {
         const parentElement = getCellParent()
         parentElement.removeChild(element)
-      }
-
-      function onSpacePress(event) {
-        if (event.key === " ") {
-          const you = document.getElementById("you")
-          if (!you) {
-            return
-          }
-
-          const gridPosition = getPositionOnGrid(you)
-          const landscapeId = createIdFromPosition(gridPosition)
-          const alreadyExists = document.getElementById(landscapeId)
-          if (alreadyExists) {
-            // TODO: Check if cell exists in the newLandscapeMap
-            // so you can only modify the cells you've added
-            // Remove cell from the landscape
-            removeCellFromGrid(alreadyExists)
-          } else {
-            // Add cell to the landscape
-            addCellToGrid(gridPosition, landscapeId, state.newLandscapeColor)
-            // Track what specific cells were added in this session
-            state.newLandscapeMap[landscapeId] = { position: gridPosition, color: state.newLandscapeColor }
-            // Persist the cells across page loads
-            addToSavedLandscape(gridPosition, state.newLandscapeColor)
-          }
-        }
       }
 
       function getSavedLandscape() {
@@ -146,6 +136,53 @@
         const id = createIdFromPosition(position)
         landscape[id] = { position, color }
         localStorage.setItem(LANDSCAPE_KEY, JSON.stringify(landscape))
+      }
+
+      function removeFromSavedLandscape(id) {
+        const landscape = getSavedLandscape()
+        delete landscape[id]
+        localStorage.setItem(LANDSCAPE_KEY, JSON.stringify(landscape))
+      }
+
+      function editLandscape() {
+        const you = document.getElementById("you")
+        if (!you) {
+          return
+        }
+
+        const gridPosition = getPositionOnGrid(you)
+        const landscapeId = createIdFromPosition(gridPosition)
+        const alreadyExists = document.getElementById(landscapeId)
+        const isFromCurrentSession = state.newLandscapeMap.hasOwnProperty(landscapeId)
+        // You can only modify the landscape elements that have been
+        // added by you in your own session
+        if (alreadyExists && isFromCurrentSession) {
+          // Remove cell from the landscape
+          removeCellFromGrid(alreadyExists)
+          removeFromSavedLandscape(landscapeId)
+        } else if (!alreadyExists) {
+          // Add cell to the landscape
+          addCellToGrid(gridPosition, landscapeId, state.newLandscapeColor)
+          // Track what specific cells were added in this session
+          state.newLandscapeMap[landscapeId] = { position: gridPosition, color: state.newLandscapeColor }
+          // Persist the cells across page loads
+          addToSavedLandscape(gridPosition, state.newLandscapeColor)
+        }
+      }
+
+      function changeCurrentColor(colorNumber) {
+        const index = colorNumber < 1 ? 9 : colorNumber - 1
+        state.newLandscapeColor = COLOR_PALETTE[index] ?? COLOR_PALETTE[0]
+      }
+
+      function onSpaceOrNumberPress(event) {
+        if (event.key === " ") {
+          editLandscape()
+        }
+
+        if (["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].includes(event.key)) {
+          changeCurrentColor(parseInt(event.key, 10))
+        }
       }
 
       // This is just to make color palette selection easier lol
@@ -193,6 +230,8 @@
           positionOnGridBySelector(selector, positions)
         }
 
+        //////////////////// Old functions for game dev
+
         // get the tagged obstacles and record their grid positions
         const obstacles = document.querySelectorAll('[data-obstacle]')
         obstacles.forEach((o) => {
@@ -221,8 +260,9 @@
           })
         }
 
+        //////////////////// New functions for landscape creation
+
         // Set up the landscape
-        state.newLandscapeColor = getRandomElement(CHOSEN_PALETTE)
         const landscape = getSavedLandscape()
         state.landscapeMap = landscape
         Object.keys(state.landscapeMap).forEach((id) => {
@@ -232,7 +272,7 @@
         // Move the avatar based on arrow presses
         document.addEventListener("keydown", onKeyDown)
         // Add elements to the landscape based on avatar position
-        document.addEventListener("keydown", onSpacePress)
+        document.addEventListener("keydown", onSpaceOrNumberPress)
 
 
         // Just for dev
@@ -254,14 +294,38 @@
       <p class="info">
         It's a work in progress! Try it out. You can move through the space using <br/>
         <code>WASD</code> or the arrow keys. Press <code>space</code> to place a color in the landscape. <br/>
-        Press it again to remove it.
+        Press it again to remove it. You can only remove the colors you've added in <br/>
+        this session.
       </p>
       <figure id="you" class="cell center">you</figure>
     </main>
+
     <section role="toolbar" class="controls">
-      <button class="toggle" onclick="printPositions()">print (dev)</button>
-      <button class="toggle" onclick="toggleGrid()">toggle grid</button>
+      <details class="controls-details" open>
+        <summary class="controls-label">
+          controls
+        </summary>
+        <button class="move-direction" style="background-color: sienna; color: white;" aria-label="select brown" onclick="changeCurrentColor(1)">1</button>
+        <button class="move-direction" style="background-color: green; color: white;" aria-label="select green" onclick="changeCurrentColor(2)">2</button>
+        <button class="move-direction" style="background-color: blue; color: white;" aria-label="select blue" onclick="changeCurrentColor(3)">3</button>
+        <button class="move-direction" style="background-color: gray;" aria-label="select gray" onclick="changeCurrentColor(4)">4</button>
+        <button class="move-direction" style="background-color: wheat;" aria-label="select yellow" onclick="changeCurrentColor(5)">5</button>
+        <button class="move-direction" style="background-color: goldenrod;" aria-label="select gold" onclick="changeCurrentColor(6)">6</button>
+        <button class="move-direction" style="background-color: purple; color: white;" aria-label="select purple" onclick="changeCurrentColor(7)">7</button>
+        <button class="move-direction" style="background-color: violet;" aria-label="select violet" onclick="changeCurrentColor(8)">8</button>
+        <button class="move-direction wave" aria-label="select wave" onclick="changeCurrentColor(9)">9</button>
+        <button class="move-direction wave wave-inverse" aria-label="select wave with blue background" onclick="changeCurrentColor(0)">0</button>
+        <button class="move-direction" aria-label="place earth" onclick="editLandscape()">s</button>
+        <button class="move-direction" aria-label="move up" onclick="onArrowButtonClick('up')">↑</button>
+        <button class="move-direction" aria-label="move left" onclick="onArrowButtonClick('left')">←</button>
+        <button class="move-direction" aria-label="move right" onclick="onArrowButtonClick('right')">→</button>
+        <button class="move-direction" aria-label="move down" onclick="onArrowButtonClick('down')">↓</button>
+        <!-- FOR DEV ONLY -->
+        <!-- <button class="toggle" onclick="printPositions()">print (dev)</button> -->
+        <!-- <button class="toggle" onclick="toggleGrid()">toggle grid</button> -->
+      </details>
     </section>
+
     <!-- For easy dev -->
     <script src="./draggable.js" defer></script>
   </body>
