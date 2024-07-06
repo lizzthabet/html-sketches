@@ -41,6 +41,12 @@
         border: 1px outset buttonborder;
       }
 
+      .move-direction.move-direction-two-cell-h {
+        height: 50px;
+        font-size: 1rem;
+        width: 100px;
+      }
+
       .veil-landscape {
         background:
           linear-gradient(to right, transparent 650px, white 1000px),
@@ -108,7 +114,7 @@
         state.newLandscapeColor = getRandomElement(COLOR_PALETTE)
       }
 
-      function createIdFromPosition(pos) {
+      function hashPosition(pos) {
         const id = `${pos.startX},${pos.startY}`
         if (pos.hasOwnProperty("endX") || pos.hasOwnProperty("endY")) {
           id += `-${pos.endX ?? ""},${pos.endY ?? ""}`
@@ -170,7 +176,7 @@
 
       function addToSavedLandscape(position, color) {
         const landscape = getSavedLandscape()
-        const id = createIdFromPosition(position)
+        const id = hashPosition(position)
         landscape[id] = { position, color }
         localStorage.setItem(LANDSCAPE_KEY, JSON.stringify(landscape))
       }
@@ -188,7 +194,7 @@
         }
 
         const gridPosition = getPositionOnGrid(you)
-        const landscapeId = createIdFromPosition(gridPosition)
+        const landscapeId = hashPosition(gridPosition)
         const alreadyExists = document.getElementById(landscapeId)
         const isFromCurrentSession = state.newLandscapeMap.hasOwnProperty(landscapeId)
         // You can only modify the landscape elements that have been
@@ -239,6 +245,26 @@
         }
       }
 
+      function downloadNewLandscape() {
+        let url
+        try {
+          // format the json list as a string
+          const newLandscape = `[${Object.values(state.newLandscapeMap).map(JSON.stringify).join(",")}]`
+          const blob = new Blob([newLandscape], { type: "application/json" });
+          url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "my-landscape-contributions.json";
+          link.click();
+        } catch (err) {
+          console.error("failed to download new landscape patches", err)
+          console.log("instead, you can type or copy 'console.log(state.newLandscapeMap)' into this console and copy the output")
+        } finally {
+          // for memory management
+          URL.revokeObjectURL(url)
+        }
+      }
+
       // This is just to make color palette selection easier lol
       const colorsToList = new Set()
       function onClickRecordColor(event) {
@@ -265,7 +291,7 @@
         COLOR_NAMES.forEach((color, i) => {
           const startX = i % 15 + colorStartPosition.startX
           const startY = Math.floor(i / 15) + colorStartPosition.startY
-          const colorCell = addCellToGrid({ startX, startY }, createIdFromPosition({ startX, startY }), color)
+          const colorCell = addCellToGrid({ startX, startY }, hashPosition({ startX, startY }), color)
           colorCell.addEventListener("click", onClickRecordColor)
         })
 
@@ -273,7 +299,7 @@
         CHOSEN_PALETTE.forEach((color, i) => {
           const startX = i % 15 + chosenStartPosition.startX
           const startY = Math.floor(i / 15) + chosenStartPosition.startY
-          addCellToGrid({ startX, startY }, createIdFromPosition({ startX, startY }), color)
+          addCellToGrid({ startX, startY }, hashPosition({ startX, startY }), color)
         })
       }
 
@@ -383,8 +409,9 @@
         <button class="move-direction" aria-label="move left" onclick="onArrowButtonClick('left')">←</button>
         <button class="move-direction" aria-label="move right" onclick="onArrowButtonClick('right')">→</button>
         <button class="move-direction" aria-label="move down" onclick="onArrowButtonClick('down')">↓</button>
+        <button class="move-direction move-direction-two-cell-h" onclick="downloadNewLandscape()" aria-label="download new landscape">download</button>
         <!-- FOR DEV ONLY -->
-        <button class="toggle" onclick="resetSavedLandscape()">reset</button>
+        <button class="move-direction move-direction-two-cell-h" aria-label="reset all landscape" onclick="resetSavedLandscape()">reset</button>
         <!-- <button class="toggle" onclick="printPositions()">print (dev)</button> -->
         <!-- <button class="toggle" onclick="toggleGrid()">toggle grid</button> -->
       </details>
