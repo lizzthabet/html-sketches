@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mouse dandruff (or, a haunting?)</title>
+    <style>
+      html {
+        background-color: midnightblue;
+        color: ghostwhite;
+        cursor: none;
+        font-size: 20px;
+        margin: 25px;
+        min-width: 90vw;
+        min-height: 90vh;
+      }
+
+      body {
+        height: 100%;
+      }
+
+      a {
+        color: ghostwhite;
+        opacity: 0.75;
+      }
+
+      a:visited, .back {
+        color: silver;
+      }
+
+      a.click:visited {
+        color: purple;
+      }
+
+      .past {
+        color: ghostwhite;
+        font-size: 2rem;
+      }
+
+      .once {
+        height: 35px;
+        width: 35px;
+        opacity: 0.2;
+        user-select: none;
+      }
+
+      button {
+        font-size: 1rem;
+        cursor: none;
+      }
+
+      button:active {
+        background-color: midnightblue;
+        color: silver;
+      }
+
+      .mirror {
+        display: block;
+        height: 300px;
+        margin-top: 20vh;
+        margin-left: auto;
+        margin-right: auto;
+        width: 175px;
+        border-radius: 75px 75px 0 0;
+      }
+
+      .evasive {
+        display: inline-block;
+        height: 25px;
+      }
+
+      .placeholder {
+        display: inline-block;
+      }
+    </style>
+    <script>
+      function leaveX(x, y) {
+        const element = document.createElement("a")
+        element.setAttribute("href", `#${encodeURI("(" + x + "," + y + ")")}`)
+        element.innerText = "x"
+        element.classList.add("past")
+        element.style.setProperty("position", "absolute")
+        element.style.setProperty("top", y + "px")
+        element.style.setProperty("left", x + "px")
+        return element
+      }
+
+      function leaveCursor(x, y) {
+        const element = document.createElement("img")
+        element.setAttribute("src", "assets/normal.cur")
+        element.classList.add("once")
+        element.style.setProperty("position", "absolute")
+        element.style.setProperty("top", y - 3 + "px")
+        element.style.setProperty("left", x + 3 + "px")
+        return element
+      }
+
+      function toMark(e) {
+        const { pageX, pageY } = e
+        const x = leaveCursor(pageX, pageY)
+        document.body.appendChild(x)
+      }
+
+      function waitByVolume(action, volume) {
+        let count = 0
+        return (toActOn) => {
+          count++
+          if (count === volume) {
+            count = 0
+            action(toActOn)
+          }
+        }
+      }
+
+      function waitByTime(action, time) {
+        let ignore = null
+        return (toActOn) => {
+          if (ignore) {
+            clearTimeout(ignore)
+          }
+          ignore = setTimeout(() => action(toActOn), time)
+        }
+      }
+
+      function show(reference, show) {
+        const target = document.querySelector(reference)
+        if (!target) {
+          return
+        }
+        const display = target.style.getPropertyValue("display")
+        if (!show && display !== "none") {
+          target.style.setProperty("display", "none")
+        }
+        if (show && display === "none") {
+          target.style.removeProperty("display")
+        }
+      }
+
+      const haunted = waitByTime(toMark, 100)
+      const haunting = waitByVolume(toMark, 60)
+      document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("mousemove", (e) => {
+          haunted(e)
+        })
+
+        const placeholders = document.querySelectorAll(".placeholder")
+        for (let i = 0; i < placeholders.length; i++) {
+          const element = placeholders.item(i)
+          const { height, width } = element.getBoundingClientRect()
+          element.style.setProperty("height", `${height}px`)
+          element.style.setProperty("width", `${width}px`)
+        }
+      })
+    </script>
+  </head>
+  <body>
+    <a href="#open" onclick="show('.mirror', true)">open</a>
+    <a href="#close" onclick="show('.mirror', false)">close</a>
+    <a href="#here" class="click">click</a>
+    <a href="#somewhere-else">it's disorienting at first but you have to</a>
+    <div class="placeholder">
+      <div class="evasive">
+        <a href="#">keep moving</a>
+      </div>
+    </div>
+    <button>press</button>
+    <a href="https://duckduckgo.com/?q=bounce+site%3Abacklinko.com&ia=web" target="_blank">bounce</a>
+    <a href="/" class="back">back</a>
+    <iframe style="display:none;" class="mirror" srcdoc="<html>
+      <head>
+        <title>a mirror with no body</title>
+        <style>
+          html {
+            height: 100%;
+            background: linear-gradient(32deg, dimgray 0%, gray 28%, ghostwhite 63%, dimgray 100%);
+            cursor: url('assets/wavy.cur'), default;
+          }
+        </style>
+      </head>
+      <body></body>
+    </html>"></iframe>
+    <!-- if you stay somewhere long enough, you can almost see yourself -->
+    <!-- you can see yourself once you stop moving -->
+    <!-- some mouse dandriff you create -->
+    <!-- it's disorienting not to point -->
+  </body>
+  <script src="evasive.js" defer></script>
+</html>
