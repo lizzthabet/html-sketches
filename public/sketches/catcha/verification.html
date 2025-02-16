@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+      }
+      .main {
+        border: solid 1px black;
+        border-radius: 5px;
+        max-width: 900px;
+        padding: 2rem;
+        width: fit-content;
+        margin: 2rem auto;
+      }
+
+      .title {
+        font-size: 1.25rem;
+      }
+
+      .verify-instruction {
+        margin-top: 35px;
+      }
+
+      .verify-box {
+        border: 1px solid black;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        width: 80%;
+      }
+
+      .verify-check {
+        background-color: white;
+        border: 3px solid #4b4b4b;
+        border-radius: 5px;
+        display: inline-block;
+        height: 40px;
+        width: 40px;
+      }
+
+      .verify-check + .verify-text {
+        color: black;
+        font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-size: 1rem;
+        margin-left: 20px;
+      }
+
+      .catcha {
+        border: none;
+      }
+
+      .catcha-positionable {
+        position: absolute;
+      }
+
+      .catcha-popup {
+        border: solid 3px #4b4b4b;
+        border-radius: 5px;
+        display: inline-block;
+        width: 200px;
+        height: 250px;
+      }
+
+      .catcha-close {
+        background-color: #4b4b4b;
+        border-radius: 50%;
+        border: none;
+        color: white;
+        position: absolute; /* this isn't right lol */
+        width: 30px;
+        height: 30px;
+      }
+
+      /* TODO: rename these classes so they're clearer */
+      .instructions {
+        background-color: #ebebeb;
+        border: solid 3px #4b4b4b;
+        border-radius: 5px;
+        max-width: 900px;
+        width: fit-content;
+        margin: auto;
+      }
+
+      .instruction-container {
+        background-color: #217783;
+        color: white;
+        padding: 1.5rem;
+      }
+
+      .instruction {
+        font-size: 1.125rem;
+      }
+
+      .grid-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        width: 400px;
+        padding: 0;
+        margin: 2rem auto;
+      }
+
+      .click-me {
+        aspect-ratio: 1 / 1;
+        width: calc(33% - 10px);
+        overflow: hidden;
+        margin: 5px;
+        background-color: #ebebeb;
+        padding: 0;
+      }
+
+      .click-me.clicked {
+        border: 5px inset #217783;
+      }
+
+      .captcha {
+        height: 100%;
+        width: 100%;
+      }
+
+      audio {
+        position: absolute;
+        top: -100vh;
+      }
+      video {
+        width: 100%;
+      }
+
+    </style>
+    <script>
+      function centerOnScreen(width = 0, height = 0) {
+        const centerScreenTop = window.screen.availHeight / 2 + window.screenTop
+        const centerScreenLeft = window.screen.availWidth / 2 + window.screenLeft
+        const top = centerScreenTop - height / 2
+        const left = centerScreenLeft - width / 2
+        return { top, left }
+      }
+
+      // maybe they all have repositional / draggable borders
+      document.addEventListener("DOMContentLoaded", () => {
+        const buttons = document.querySelectorAll("button.click-me")
+        buttons.forEach((button, i) => {
+          button.addEventListener("click", (e) => {
+            if (e.currentTarget) {
+              if (e.currentTarget.classList.contains("clicked")) {
+                e.currentTarget.classList.remove("clicked")
+                const video = e.currentTarget.querySelector("video")
+                if (video) {
+                  video.pause()
+                }
+                const audio = e.currentTarget.querySelector("audio")
+                if (audio) {
+                  audio.pause()
+                }
+              } else {
+                e.currentTarget.classList.add("clicked")
+                const video = e.currentTarget.querySelector("video")
+                if (video) {
+                  video.play()
+                }
+                const audio = e.currentTarget.querySelector("audio")
+                if (audio) {
+                  audio.play()
+                }
+              }
+            }
+            // next, add the animation
+          })
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <main class="main">
+      <h1>sketches.lizz.website</h1>
+      <h2 class="title">Verify that you are human by completing the action below</h1>
+      <button id="proof" class="verify-box">
+        <span role="presentation" class="verify-check"></span>
+        <p class="verify-text">I'm not a robot</p>
+      </button>
+      <p>This site needs to review the security of your connection before proceeding.</p>
+    </main>
+    <dialog open id="verification" class="instructions">
+      <div class="instruction-container">
+        <h1 class="instruction">Please click on all of the items that need sunshine to survive.</h1>
+        <p class="sub-instruction">If there are None, click Skip</p>
+      </div>
+      <figure id="selection-1" class="grid-wrapper">
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop1.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-sleeps-like-a-pro.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop2.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-thinks-about-snow.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop3.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-likes-pizza.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop4.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-is-a-loaf.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop5.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-likes-sunshine.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop6.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-looks-over.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop7.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-loves-the-couch.mp4"></video>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop2.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-has-a-toy.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop3.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-looks-around-some-more.mp4"></video>
+        </button>
+      </figure>
+      <figure id="selection-2" class="grid-wrapper" style="display:none;">
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop1.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-around-even-more.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop2.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-drops-the-snack.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop3.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-lays-around.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop4.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-plays-games.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop5.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-sleeps.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop6.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-wants-a-snack.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop7.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-climbs-the-stairs.mp4"></video>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop2.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-lays-down.mp4"></video>
+        </button>
+        <button class="click-me">
+          <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop3.wav"></audio>
+          <video disablepictureinpicture loop muted src="assets/texas/texas-looks-around.mp4"></video>
+        </button>
+      </figure>
+      <!-- add button functionality! -->
+      <button>skip</button>
+      <button>next</button>
+    </dialog>
+  </body>
+</html>
