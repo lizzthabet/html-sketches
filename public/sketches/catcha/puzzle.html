@@ -29,7 +29,7 @@
       }
 
       dialog::backdrop {
-        background-color: rgba(2,0,36,0.5)
+        background-color: rgba(2,0,36,0.85)
       }
 
       dialog[open].instructions {
@@ -107,15 +107,6 @@
         opacity: 0.2;
         user-select: none;
       }
-
-      /* for testing only */
-      #box {
-        background-color: white;
-        opacity: 75%;
-        width: 100px;
-        height: 100px;
-      }
-
     </style>
     <script>
       const ENVIRONMENT_CONFIG = {
@@ -195,8 +186,8 @@
       const hauntedOnMouseMove = waitByTime(leaveTrace, 175)
       document.addEventListener("DOMContentLoaded", () => {
         // display dialogs as modals, which is needed for backdrops
-        const dialogs = ["verification", "verification-two", "verification-three"]
-        const verifyButtons = ["verify", "verify-two", "verify-three"]
+        const dialogs = ["verification-three", "verification", "verification-two"]
+        const verifyButtons = ["verify-three", "verify", "verify-two"]
         dialogs.forEach((id, idx) => {
           const dialog = document.getElementById(id)
           if (idx === 0 && dialog && dialog.localName === "dialog") {
@@ -278,7 +269,6 @@
     <script src="draggable.js" defer></script>
   </head>
   <body draggable="false">
-    <!-- <p id="box" style="position:absolute; top: 50px; left: 50px;" data-draggable>testing</p> -->
     <dialog id="verification" class="instructions" style="width: 655px; height: 830px;">
       <div class="instruction-container">
         <h1 class="instruction">Use your mouse to drag the puzzle pieces together and complete the picture.</h1>
@@ -312,48 +302,54 @@
       <div style="border: 2px solid rgba(255, 255, 255, 0.5);border-radius: 10px;margin: 25px auto;height: 750px;width: 500px;background-color: rgba(255,255,255,0.2);"></div>
       <!-- <img src="assets/pixel-background-1.png" style="max-height: 500px;"/> -->
       <figure id="puzzles-two" class="grid-wrapper">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_14.png" data-draggable="" style="top: 170px; left: 608px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_15.png" data-draggable="" style="top: 300px; left: 55px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_16.png" data-draggable="" style="top: 63.5px; left: 266.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_17.png" data-draggable="" style="top: 451px; left: 40px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_18.png" data-draggable="" style="top: 469.5px; left: 1005.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_19.png" data-draggable="" style="top: 62px; left: 125px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_20.png" data-draggable="" style="top: 211.5px; left: 1040.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_22.png" data-draggable="" style="top: 604px; left: 35px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_23.png" data-draggable="" style="top: 229px; left: 132px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_24.png" data-draggable="" style="top: 210px; left: 1138px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_25.png" data-draggable="" style="top: 46px; left: 1327px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_27.png" data-draggable="" style="top: 167px; left: 63px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_28.png" data-draggable="" style="top: 80px; left: 1040px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_29.png" data-draggable="" style="top: 626.5px; left: 1363.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_30.png" data-draggable="" style="top: 314px; left: 914px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_31.png" data-draggable="" style="top: 285px; left: 1115px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_32.png" data-draggable="" style="top: 444.5px; left: 256.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_33.png" data-draggable="" style="top: 226px; left: 1247px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_34.png" data-draggable="" style="top: 591px; left: 167px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_35.png" data-draggable="" style="top: 103.5px; left: 901.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_36.png" data-draggable="" style="top: 853.5px; left: 995.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_37.png" data-draggable="" style="top: 789px; left: 1179px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_38.png" data-draggable="" style="top: 847px; left: 1363px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_39.png" data-draggable="" style="top: 779.5px; left: 447.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_40.png" data-draggable="" style="top: 114px; left: 405px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_41.png" data-draggable="" style="top: 762.5px; left: 60.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_42.png" data-draggable="" style="top: 764px; left: 607px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_43.png" data-draggable="" style="top: 308px; left: 446px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_44.png" data-draggable="" style="top: 532px; left: 1382px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_45.png" data-draggable="" style="top: 718px; left: 148px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_47.png" data-draggable="" style="top: 787px; left: 207px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_48.png" data-draggable="" style="top: 456.5px; left: 1183.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_51.png" data-draggable="" style="top: 51.5px; left: 1182.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_52.png" data-draggable="" style="top: 285.5px; left: 271.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_53.png" data-draggable="" style="top: 652.5px; left: 1247.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_54.png" data-draggable="" style="top: 712.5px; left: 957.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_55.png" data-draggable="" style="top: 149.5px; left: 1348.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_56.png" data-draggable="" style="top: 581px; left: 325px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_57.png" data-draggable="" style="top: 339px; left: 1317px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_58.png" data-draggable="" style="top: 740px; left: 327px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_59.png" data-draggable="" style="top: 582.5px; left: 1101.5px; position: absolute;" draggable="false">
-        <img class="puzzle-piece" src="assets/cookie-cutter/original_60.png" data-draggable="" draggable="false" style="top: 874px; left: 880px; position: absolute;">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-14_75p.png" data-draggable="" style="top: 618px; left: 413px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-15_75p.png" data-draggable="" style="top: 323px; left: 52px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-16_75p.png" data-draggable="" style="top: 124.5px; left: 1369.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-17_75p.png" data-draggable="" style="top: 451px; left: 40px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-18_75p.png" data-draggable="" style="top: 492.5px; left: 1031.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-19_75p.png" data-draggable="" style="top: 218px; left: 130px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-20_75p.png" data-draggable="" style="top: 214.5px; left: 1033.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-21_75p.png" data-draggable="" style="top: 604px; left: 35px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-22_75p.png" data-draggable="" style="top: 598px; left: 1373px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-23_75p.png" data-draggable="" style="top: 360px; left: 132px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-24_75p.png" data-draggable="" style="top: 210px; left: 1138px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-25_75p.png" data-draggable="" style="top: 186px; left: 1272px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-26_75p.png" data-draggable="" style="top: 122px; left: 42px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-27_75p.png" data-draggable="" style="top: 111px; left: 227px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-28_75p.png" data-draggable="" style="top: 89px; left: 1194px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-29_75p.png" data-draggable="" style="top: 766.5px; left: 58.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-30_75p.png" data-draggable="" style="top: 436px; left: 396px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-31_75p.png" data-draggable="" style="top: 414px; left: 1259px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-32_75p.png" data-draggable="" style="top: 444.5px; left: 256.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-33_75p.png" data-draggable="" style="top: 365px; left: 1196px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-34_75p.png" data-draggable="" style="top: 87px; left: 398px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-35_75p.png" data-draggable="" style="top: 106.5px; left: 1025.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-36_75p.png" data-draggable="" style="top: 836.5px; left: 1076.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-37_75p.png" data-draggable="" style="top: 822px; left: 1116px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-38_75p.png" data-draggable="" style="top: 332px; left: 1043px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-39_75p.png" data-draggable="" style="top: 741.5px; left: 369.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-40_75p.png" data-draggable="" style="top: 484px; left: 190px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-41_75p.png" data-draggable="" style="top: 244.5px; left: 390.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-42_75p.png" data-draggable="" style="top: 444px; left: 1368px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-43_75p.png" data-draggable="" style="top: 679px; left: 1083px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-44_75p.png" data-draggable="" style="top: 511px; left: 1177px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-45_75p.png" data-draggable="" style="top: 629px; left: 164px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-46_75p.png" data-draggable="" style="top: 787px; left: 207px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-47_75p.png" data-draggable="" style="top: 787px; left: 207px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-1_75p.png" data-draggable="" style="top: 788.5px; left: 1037.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-2_75p.png" data-draggable="" style="top: 761.5px; left: 1239.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-3_75p.png" data-draggable="" style="top: 285.5px; left: 271.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-4_75p.png" data-draggable="" style="top: 640.5px; left: 1226.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-11_75p.png" data-draggable="" style="top: 729.5px; left: 1020.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-5_75p.png" data-draggable="" style="top: 289.5px; left: 1340.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-6_75p.png" data-draggable="" style="top: 564px; left: 310px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-7_75p.png" data-draggable="" style="top: 431px; left: 1169px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-8_75p.png" data-draggable="" style="top: 701px; left: 272px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-9_75p.png" data-draggable="" style="top: 595.5px; left: 1116.5px; position: absolute;" draggable="false">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-10_75p.png" data-draggable="" draggable="false" style="top: 787px; left: 1149px; position: absolute;">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-11_75p.png" data-draggable="" draggable="false" style="top: 307px; left: 1261px; position: absolute;">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-12_75p.png" data-draggable="" draggable="false" style="top: 627px; left: 1008px; position: absolute;">
+        <img class="puzzle-piece" src="assets/cookie-cutter/cookie-cutter-13_75p.png" data-draggable="" draggable="false" style="top: 776px; left: 312px; position: absolute;">
       </figure>
       <form method="dialog">
         <button id="verify-two" class="verify-button">Verify</button>

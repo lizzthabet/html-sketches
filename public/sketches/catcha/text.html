@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+      }
+      .text-verification {
+        border: solid 2px black;
+        max-width: 450px;
+        padding: 2rem;
+        width: fit-content;
+        margin: 2rem;
+      }
+
+      .prompt {
+        color: brown;
+        font-size: 1.25rem;
+        margin-top: 0;
+      }
+
+      .form-1 {
+        display: flex;
+        justify-items: center;
+        margin-top: 8px;
+      }
+
+      #input-1 {
+        font-size: 1.75rem;
+        margin-right: 5px;
+      }
+
+      #submit-1 {
+        font-size: 1.15rem;
+        padding: 5px;
+      }
+
+    </style>
+    <script>
+      const FORM1_CAPTCHA_VALUE = "H3V22XFW"
+      const letters = "abcdefghijklmnopqrstuvwxyz"
+      const offsetValue = Math.floor(Math.random() * 25)
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const input1 = document.getElementById("input-1")
+        if (input1) {
+          input1.addEventListener("beforeinput", (e) => {
+            const { inputType, data } = e
+            if (inputType === "insertText" && data) {
+              e.stopPropagation()
+              e.preventDefault()
+              const chars = data.toLowerCase().split("")
+              const newChars = chars.map((c, i) => {
+                const letterIdx = letters.indexOf(c)
+                console.log(letterIdx)
+                // No matches found, so just return input unchanged
+                if (letterIdx <= 0) {
+                  return c
+                }
+                // Map the letter to some other random letter
+                const offsetIdx = (letterIdx + offsetValue) % letters.length
+                const newChar = letters[offsetIdx]
+                const isUppercase = data[i] !== c // THIS IS BROKEN SOMEHOW?
+                return isUppercase ? newChar.toUpperCase() : newChar
+              })
+              console.log("now we cookin", data, "=>", newChars.join(""))
+              input1.value = input1.value + newChars.join("") // TODO: THIS ISN'T A CORRECT ASSUMPTION
+              if (input1.value.toLowerCase() === FORM1_CAPTCHA_VALUE.toLowerCase()) {
+                const submitButton1 = document.getElementById("submit-1")
+                if (submitButton1) {
+                  submitButton1.setAttribute("disabled", false)
+                }
+              }
+            }
+          })
+        }
+
+       
+      })
+    </script>
+  </head>
+  <body>
+    <section class="text-verification">
+      <h1 class="prompt">Are you a robot? If not, spin around twice, touch your nose, and please enter the text below.</h1>
+      <img src="assets/random-text-with-cat.jpg" alt="a picture of black text on a white background" />
+      <form class="form-1">
+        <input id="input-1" aria-label="enter the text from the picture" type="text" />
+        <button id="submit-1" type="submit" disabled>Submit</button>
+      </form>
+    </section>
+  </body>
+</html>
