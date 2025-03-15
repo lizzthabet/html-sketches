@@ -49,35 +49,9 @@
         margin-left: 20px;
       }
 
-      .catcha {
-        border: none;
-      }
-
-      .catcha-positionable {
-        position: absolute;
-      }
-
-      .catcha-popup {
-        border: solid 3px #4b4b4b;
-        border-radius: 5px;
-        display: inline-block;
-        width: 200px;
-        height: 250px;
-      }
-
-      .catcha-close {
-        background-color: #4b4b4b;
-        border-radius: 50%;
-        border: none;
-        color: white;
-        position: absolute; /* this isn't right lol */
-        width: 30px;
-        height: 30px;
-      }
-
       /* TODO: rename these classes so they're clearer */
       .instructions {
-        background-color: #ebebeb;
+        /* background-color: #ebebeb; */
         border: solid 3px #4b4b4b;
         border-radius: 5px;
         max-width: 900px;
@@ -129,6 +103,38 @@
         width: 100%;
       }
 
+      .next-actions {
+        display: flex;
+        justify-content: end;
+      }
+
+      .next {
+        font-size: 1.25rem;
+        /* background-color: white; */
+        background-color: #ebebeb;
+        border-radius: 5px;
+        padding: 2px 10px;
+        border-color: #4b4b4b;
+      }
+
+      .next:disabled {
+        background-color: #f3f3f3;
+        border-color: #979797;
+      }
+
+      .next + .next {
+        margin-left: 10px;
+      }
+
+      .next-panel {
+        opacity: 0%;
+        display: none;
+      }
+
+      .hidden {
+        display: none;
+      }
+
     </style>
     <script>
       function centerOnScreen(width = 0, height = 0) {
@@ -139,9 +145,32 @@
         return { top, left }
       }
 
-      // maybe they all have repositional / draggable borders
+      function toggleClass(element, cssClass) {
+        if (!element || !cssClass) {
+          return
+        }
+
+        if (element.classList.contains(cssClass)) {
+          element.classList.remove(cssClass)
+        } else {
+          element.classList.add(cssClass)
+        }
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
+        const openProofButton = document.getElementById("proof")
+        if (openProofButton) {
+          openProofButton.addEventListener("click", (_e) => {
+            const verificationDialog = document.getElementById("verification")
+            if (verificationDialog) {
+              // TODO: consider setting dialog position based on mouse click
+              verificationDialog.showModal()
+            }
+          })
+        }
+
         const buttons = document.querySelectorAll("button.click-me")
+        // Add listeners to the captcha video buttons
         buttons.forEach((button, i) => {
           button.addEventListener("click", (e) => {
             if (e.currentTarget) {
@@ -167,9 +196,81 @@
                 }
               }
             }
-            // next, add the animation
+          })
+
+          // Enable or disable the submit button based on interactions
+          button.addEventListener("click", (e) => {
+            const selected = document.querySelectorAll("button.click-me.clicked")
+            const submitButton = document.getElementById("submit")
+            if (selected.length && submitButton) {
+              submitButton.removeAttribute("disabled")
+            } else if (submitButton) {
+              submitButton.setAttribute("disabled", true)
+            }
           })
         })
+
+        // The "submit" button completes the captcha
+        const submitButton = document.getElementById("submit")
+        if (submitButton) {
+          submitButton.addEventListener("click", () => {
+            const verificationDialog = document.getElementById("verification")
+            if (verificationDialog) {
+              verificationDialog.close()
+            }
+            // TODO:
+            // start loading animation
+            // go to next page
+          })
+        }
+
+        // The "skip" button lets you go to the second panel once
+        const skipButton = document.getElementById("skip")
+        if (skipButton) {
+          skipButton.addEventListener("click", () => {
+            const panelOne = document.getElementById("panel-1")
+            const panelTwo = document.getElementById("panel-2")
+            if (!panelOne || !panelTwo) {
+              return
+            }
+            if (panelTwo.classList.contains("next-panel")) {
+              toggleClass(panelTwo, "next-panel")
+              toggleClass(panelOne, "next-panel")
+              skipButton.setAttribute("disabled", true)
+
+              if (submitButton && submitButton.classList.contains("hidden")) {
+                toggleClass(submitButton, "hidden")
+              }
+            }
+          })
+        }
+
+        // The "next" button navigates between the two selection grids
+        const nextButton = document.getElementById("next")
+        if (nextButton) {
+          nextButton.addEventListener("click", () => {
+            const panelOne = document.getElementById("panel-1")
+            const panelTwo = document.getElementById("panel-2")
+            if (!panelOne || !panelTwo) {
+              return
+            }
+            toggleClass(panelOne, "next-panel")
+            toggleClass(panelTwo, "next-panel")
+
+            // When panel two is showing, so disable skip button and show submit button
+            if (!panelTwo.classList.contains("next-panel")) {
+              // TODO: This behavior of when the "skip" button is enabled
+              // may not make much sense, so maybe worth cleaning up logic or removing
+              if (skipButton) {
+                skipButton.setAttribute("disabled", true)
+              }
+              
+              if (submitButton && submitButton.classList.contains("hidden")) {
+                toggleClass(submitButton, "hidden")
+              }
+            }
+          })
+        }
       })
     </script>
   </head>
@@ -183,12 +284,12 @@
       </button>
       <p>This site needs to review the security of your connection before proceeding.</p>
     </main>
-    <dialog open id="verification" class="instructions">
+    <dialog id="verification" class="instructions">
       <div class="instruction-container">
         <h1 class="instruction">Please click on all of the items that need sunshine to survive.</h1>
         <p class="sub-instruction">If there are None, click Skip</p>
       </div>
-      <figure id="selection-1" class="grid-wrapper">
+      <figure id="panel-1" class="grid-wrapper">
         <button class="click-me">
           <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop1.wav"></audio>
           <video disablepictureinpicture loop muted src="assets/texas/texas-sleeps-like-a-pro.mp4"></video>
@@ -225,7 +326,7 @@
           <video disablepictureinpicture loop muted src="assets/texas/texas-looks-around-some-more.mp4"></video>
         </button>
       </figure>
-      <figure id="selection-2" class="grid-wrapper" style="display:none;">
+      <figure id="panel-2" class="grid-wrapper next-panel">
         <button class="click-me">
           <audio controls="false" preload="auto" loop src="assets/bleep-bloops/bleepbloop1.wav"></audio>
           <video disablepictureinpicture loop muted src="assets/texas/texas-around-even-more.mp4"></video>
@@ -262,9 +363,11 @@
           <video disablepictureinpicture loop muted src="assets/texas/texas-looks-around.mp4"></video>
         </button>
       </figure>
-      <!-- add button functionality! -->
-      <button>skip</button>
-      <button>next</button>
+      <div class="next-actions">
+        <button class="next" id="skip">skip</button>
+        <button class="next" id="next">next</button>
+        <button class="next hidden" id="submit" disabled>submit</button>
+      </div>
     </dialog>
   </body>
 </html>
