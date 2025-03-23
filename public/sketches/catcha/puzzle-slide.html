@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      body.default {
+        cursor: default;
+      }
+
+      body.grabbing {
+        cursor: grabbing;
+      }
+
+      dialog::backdrop {
+        background-color: rgba(0,0,0,0.45)
+      }
+
+      dialog[open].instructions {
+        background-color: white;
+        border: none;
+        border-radius: 5px;
+        height: 650px;
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        width: 750px;
+      }
+
+      .instruction-container {
+        color: #5a5a5a;
+        text-align: center;
+        /* TODO: redo spacing layout */
+        /* margin-bottom: 35px; */
+      }
+
+      .instruction {
+        font-size: 1.125rem;
+        font-weight: normal;
+      }
+
+      .puzzle-wrapper {
+        background-image: url("assets/pixel-background-1.png");
+        display: flex;
+        flex-wrap: wrap;
+        height: 500px;
+        padding: 0;
+      }
+
+      .verify-button {
+        background-color: #5a5a5a;
+        border: none;
+        border-radius: 2px;
+        color: white;
+        font-size: 1.125rem;
+        padding: 10px 10px;
+        display: block;
+        /* TODO: redo spacing layout */
+        margin: 35px 0 0 auto;
+        width: 100px;
+      }
+
+      .verify-button:disabled {
+        /* this can be improved lol */
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      [data-draggable] {
+        display: inline-block;
+        user-select: none;
+        margin: 0;
+      }
+
+      [data-draggable]:hover {
+        cursor: grab;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .puzzle-piece {
+        z-index: 2;
+      }
+
+      .piece-placeholder {
+        z-index: 1;
+      }
+
+      .slider {
+        color: yellow;
+        /* TODO: redo spacing layout */
+        margin-top: 20px;
+      }
+
+      .slider::-webkit-slider-runnable-track {
+        color: yellow;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 23px;
+        height: 24px;
+        border: 0;
+        background: url('assets/arrow-right_black.png');
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 23px;
+        height: 25px;
+        border: 0;
+        background: url('assets/arrow-right_black.png');
+        cursor: pointer;
+      }
+    </style>
+    <script>
+      // Configuration
+      const ENVIRONMENT_CONFIG = {
+        setInitialPosition: false, // to position draggable elements in their initial place before making draggable
+      }
+
+      const POSITION_BUFFER_PX = 5
+      const SLIDER_MAX = 600
+      const INITIAL_X_MIN = 100
+      const INITIAL_X_MAX = 600
+
+      const pieceQueue = ["24", "20", "3", "21", "16", "23", "6", "5", "25", "10", "11", "17", "9", "12", "19", "14", "13", "15", "1", "4", "2", "8", "7", "22", "18", "26"]
+
+      const pieces = {
+        "1": {
+          "current": "1",
+          "next": "2",
+          "target": { "x": 468, "y": 339 },
+          "initial": { "x": INITIAL_X_MAX, "y": 339 },
+          "direction": "left"
+        },
+        "2": {
+          "current": "2",
+          "next": "3",
+          "target": { "x": 469, "y": 230 },
+          "initial": { "x": INITIAL_X_MAX, "y": 230 },
+          "direction": "left"
+        },
+        "3": {
+          "current": "3",
+          "next": "4",
+          "target": { "x": 455, "y": 290 },
+          "initial": { "x": INITIAL_X_MIN, "y": 290 },
+          "direction": "right"
+        },
+        "4": {
+          "current": "4",
+          "next": "5",
+          "target": { "x": 445, "y": 152 },
+          "initial": { "x": INITIAL_X_MIN, "y": 152 },
+          "direction": "right"
+        },
+        "5": {
+          "current": "5",
+          "next": "6",
+          "target": { "x": 332, "y": 183 },
+          "initial": { "x": INITIAL_X_MIN, "y": 183 },
+          "direction": "right"
+        },
+        "6": {
+          "current": "6",
+          "next": "7",
+          "target": { "x": 405, "y": 166 },
+          "initial": { "x": INITIAL_X_MAX, "y": 166 },
+          "direction": "left"
+        },
+        "7": {
+          "current": "7",
+          "next": "8",
+          "target": { "x": 454, "y": 164 },
+          "initial": { "x": INITIAL_X_MAX, "y": 164 },
+          "direction": "left"
+        },
+        "8": {
+          "current": "8",
+          "next": "9",
+          "target": { "x": 469, "y": 116 },
+          "initial": { "x": INITIAL_X_MIN, "y": 116 },
+          "direction": "right"
+        },
+        "9": {
+          "current": "9",
+          "next": "10",
+          "target": { "x": 277, "y": 166 },
+          "initial": { "x": INITIAL_X_MAX, "y": 166 },
+          "direction": "left"
+        },
+        "10": {
+          "current": "10",
+          "next": "11",
+          "target": { "x": 241, "y": 145 },
+          "initial": { "x": INITIAL_X_MAX, "y": 145 },
+          "direction": "left"
+        },
+        "11": {
+          "current": "11",
+          "next": "12",
+          "target": { "x": 235, "y": 163 },
+          "initial": { "x": INITIAL_X_MIN, "y": 163 },
+          "direction": "right"
+        },
+        "12": {
+          "current": "12",
+          "next": "13",
+          "target": { "x": 405, "y": 403 },
+          "initial": { "x": INITIAL_X_MAX, "y": 403 },
+          "direction": "left"
+        },
+        "13": {
+          "current": "13",
+          "next": "14",
+          "target": { "x": 328, "y": 418 },
+          "initial": { "x": INITIAL_X_MAX, "y": 418 },
+          "direction": "left"
+        },
+        "14": {
+          "current": "14",
+          "next": "15",
+          "target": { "x": 301, "y": 403 },
+          "initial": { "x": INITIAL_X_MIN, "y": 403 },
+          "direction": "right"
+        },
+        "15": {
+          "current": "15",
+          "next": "16",
+          "target": { "x": 243, "y": 340 },
+          "initial": { "x": INITIAL_X_MIN, "y": 340 },
+          "direction": "right"
+        },
+        "16": {
+          "current": "16",
+          "next": "17",
+          "target": { "x": 229, "y": 290 },
+          "initial": { "x": INITIAL_X_MAX, "y": 290 },
+          "direction": "left",
+        },
+        "17": {
+          "current": "17",
+          "next": "18",
+          "target": { "x": 228, "y": 212 },
+          "initial": { "x": INITIAL_X_MIN, "y": 212 },
+          "direction": "right"
+        },
+        "18": {
+          "current": "18",
+          "next": "19",
+          "target": { "x": 392, "y": 353 },
+          "initial": { "x": INITIAL_X_MAX, "y": 353 },
+          "direction": "left"
+        },
+        // top: 354px; left: 266px; position: absolute;
+        "19": {
+          "current": "19",
+          "next": "20",
+          "target": { "x": 266, "y": 354 },
+          "initial": { "x": INITIAL_X_MIN, "y": 353 },
+          "direction": "right"
+        },
+        "20": {
+          "current": "20",
+          "next": "21",
+          "target": { "x": 341, "y": 339 },
+          "initial": { "x": INITIAL_X_MAX, "y": 339 },
+          "direction": "left"
+        },
+        "21": {
+          "current": "21",
+          "next": "22",
+          "target": { "x": 264, "y": 226 },
+          "initial": { "x": INITIAL_X_MAX, "y": 226 },
+          "direction": "left"
+        },
+        "22": {
+          "current": "22",
+          "next": "23",
+          "target": { "x": 342, "y": 212 },
+          "initial": { "x": INITIAL_X_MIN, "y": 212 },
+          "direction": "right"
+        },
+        "23": {
+          "current": "23",
+          "next": "24",
+          "target": { "x": 392, "y": 227 },
+          "initial": { "x": INITIAL_X_MIN, "y": 227 },
+          "direction": "right"
+        },
+        "24": {
+          "current": "24",
+          "next": "25",
+          "target": { "x": 279, "y": 276 },
+          "initial": { "x": INITIAL_X_MAX, "y": 276 },
+          "direction": "left"
+        },
+        "25": {
+          "current": "25",
+          "next": "26",
+          "target": { "x": 406, "y": 276 },
+          "initial": { "x": INITIAL_X_MIN, "y": 276 },
+          "direction": "right"
+        },
+        "26": {
+          "current": "26",
+          "next": "",
+          "target": { "x": 328, "y": 290 },
+          "initial": { "x": INITIAL_X_MAX, "y": 290 },
+          "direction": "left"
+        }
+      }
+
+      // State
+      let selectedId = pieceQueue.shift()
+
+      function showElement(element, show) {
+        if (!element) {
+          return
+        }
+
+        if (show) {
+          element.classList.remove("hidden")
+        } else {
+          element.classList.add("hidden")
+        }
+      }
+
+      function positionElement(element, x, y) {
+        if (!element) {
+          return
+        }
+        if (x !== undefined) {
+          element.style.setProperty("left", x + "px")
+        }
+        if (y !== undefined) {
+          element.style.setProperty("top", y + "px")
+        }
+      }
+
+      function showPieceAndTarget() {
+        const p = document.getElementById(selectedId)
+        showElement(p, true)
+        const target = document.getElementById(`target_${selectedId}`)
+        showElement(target, true)
+      }
+
+      function checkPiecePosition(slider) {
+        const piece = document.getElementById(selectedId)
+        const config = pieces[selectedId]
+        if (piece && config) {
+          const targetX = config.target.x
+          const targetY = config.target.y
+          const x = parseInt(piece.style.getPropertyValue("left").replace("px", ""))
+          const y = parseInt(piece.style.getPropertyValue("top").replace("px", ""))
+          const xInRange =  x >= targetX - POSITION_BUFFER_PX &&  x <= targetX + POSITION_BUFFER_PX
+          const yInRange =  y >= targetY - POSITION_BUFFER_PX &&  y <= targetY + POSITION_BUFFER_PX
+          // Check to see if piece is in the right area
+          if (xInRange && yInRange) {
+            positionElement(piece, targetX, targetY)
+            // Hide the target piece since it's no longer needed
+            const target = document.getElementById(`target_${selectedId}`)
+            showElement(target, false)
+            // Grab the next piece
+            selectedId = pieceQueue.shift()
+            if (selectedId) {
+              // Display it
+              showPieceAndTarget()
+              // Configure the next slider
+              configureSliderToSelectedPiece(slider)
+            }
+          }
+        }
+
+        if (!selectedId) {
+          const submitButton = document.getElementById("verify")
+          if (submitButton) {
+            submitButton.removeAttribute("disabled")
+          }
+        }
+      }
+
+      function onSliderInput(e) {
+        const piece = document.getElementById(selectedId)
+        const config = pieces[selectedId]
+        if (piece && config) {
+          let newValue = -Infinity
+          let targetValue = -Infinity
+          if (config.direction === "left" || config.direction === "right") {
+            newValue = config.initial.x + e.target.valueAsNumber
+            targetValue = config.target.x
+            positionElement(piece, newValue, undefined)
+          }
+        }
+      }
+
+      function configureSliderToSelectedPiece(slider) {
+        if (!slider) {
+          return
+        }
+
+        const config = pieces[selectedId]
+        if (!config) {
+          return
+        }
+
+        switch(config.direction) {
+          case "left":
+            setSlider(slider, -SLIDER_MAX, 0, 0, onSliderInput)
+            break;
+          case "right":
+            setSlider(slider, 0, SLIDER_MAX, 0, onSliderInput)
+            break;
+          default:
+            break;
+        }
+
+      }
+
+      function setSlider(slider, min, max, value) {
+        if (!slider) {
+          return
+        }
+        slider.setAttribute("min", min)
+        slider.setAttribute("max", max)
+        slider.value = value
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Display dialogs as modals, which is needed for backdrops
+        const dialogs = ["verification-three"]
+        dialogs.forEach((id, idx) => {
+          const dialog = document.getElementById(id)
+          if (idx === 0 && dialog && dialog.localName === "dialog") {
+            dialog.showModal()
+          }
+        })
+
+        // Position each piece initially
+        const allPieces = document.querySelectorAll(".puzzle-piece")
+        allPieces.forEach(p => {
+          const id = p.getAttribute("id")
+          const isTargetPiece = id.includes("target")
+          const pieceId = isTargetPiece ? id.substring(7) : id // trim "target_" to look up position details
+          const position = pieces[pieceId]
+          if (position) {
+            const coord = isTargetPiece ? position.target : position.initial
+            if (coord) {
+              positionElement(p, coord.x, coord.y)
+            }
+          }
+          showElement(p, false)
+        })
+
+        // First piece is visible
+        showPieceAndTarget()
+
+        // Add listener to the slider
+        const slider = document.getElementById("slider-test")
+        configureSliderToSelectedPiece(slider)
+        if (slider) {
+          slider.addEventListener("input", onSliderInput)
+          slider.addEventListener("change", (e) => checkPiecePosition(e.target))
+        }
+      })
+
+      window.addEventListener("load", () => {
+        // const pieces = {}
+        // for (let i = 1; i < 27; i++) {
+        //   const piece = document.getElementById(`${i}`)
+        //   if (piece) {
+        //     const position = {
+        //       current: `${i}`,
+        //       next: `${i < 26 ? i + 1 : ""}`,
+        //       target: {
+        //         x: Math.round(parseInt(piece.style["left"].replace(/px$/))),
+        //         y: Math.round(parseInt(piece.style["top"].replace(/px$/))),
+        //       },
+        //       initial: undefined,
+        //       direction: undefined,
+        //     }
+        //     pieces[`${i}`] = position
+        //   } else {
+        //     console.warn("missing for", i)
+        //   }
+          // current: "1",
+          // initial: { x: 132, y: 427 },
+          // target: { x: 300, y: 427 },
+          // direction: "right",
+          // next: "2",
+          
+        // }
+        // console.log("PIECES", JSON.stringify(pieces))
+        // ---> this might be needed to set the size of containers where their content is positioned absolutely
+        // const verification = document.getElementById("verification")
+        // if (verification) {
+        //   const { height, width } = verification.getBoundingClientRect()
+        //   verification.style.setProperty("width", width + "px")
+        //   verification.style.setProperty("height", height + "px")
+        // }
+
+        // Batch reposition a set of elements in relation to a parent element
+        // setTimeout(() => {
+        //   const wrapper = document.getElementById("verification-two")
+        //   if (wrapper) {
+        //     const { top } = wrapper.getBoundingClientRect()
+        //     const draggables = document.querySelectorAll("#puzzles-two > [data-draggable]")
+        //     draggables.forEach((d) => {
+        //       const { top: currentTop } = d.getBoundingClientRect()
+        //       console.log(top, currentTop)
+        //       d.style.setProperty("top", currentTop - top + "px")
+        //     })
+        //   }
+        // }, 1000)
+      })
+    </script>
+    <script src="draggable.js" defer></script>
+  </head>
+  <body draggable="false">
+    <dialog id="verification-three" class="instructions">
+      <div class="instruction-container">
+        <h1 class="instruction">Use your mouse to drag the puzzle pieces together and complete the picture.</h1>
+      </div>
+      <figure class="puzzle-wrapper">
+        <img id="1" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_1_12p.png" data-draggable="" style="top: 339.429px; left: 468.964px; position: absolute;" draggable="false">
+        <img id="2" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_2_12p.png" data-draggable="" style="top: 230.022px; left: 469.011px; position: absolute;" draggable="false">
+        <img id="3" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_3_12p.png" data-draggable="" style="top: 290.413px; left: 455.074px; position: absolute;" draggable="false">
+        <img id="4" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_4_12p.png" data-draggable="" style="top: 152.107px; left: 445.029px; position: absolute;" draggable="false">
+        <img id="5" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_5_12p.png" data-draggable="" style="top: 183.009px; left: 332.076px; position: absolute;" draggable="false">
+        <img id="6" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_6_12p.png" data-draggable="" style="top: 166px; left: 405.978px; position: absolute;" draggable="false">
+        <img id="7" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_7_12p.png" data-draggable="" style="top: 164.027px; left: 454.933px; position: absolute;" draggable="false">
+        <img id="8" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_8_12p.png" data-draggable="" style="top: 116.46px; left: 469.045px; position: absolute;" draggable="false">
+        <img id="9" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_9_12p.png" data-draggable="" style="top: 166.504px; left: 277.935px; position: absolute;" draggable="false">
+        <img id="10" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_10_12p.png" data-draggable="" style="top: 145.5px; left: 241.531px; position: absolute;" draggable="false">
+        <img id="11" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_11_12p.png" data-draggable="" style="top: 163.388px; left: 235.978px; position: absolute;" draggable="false">
+        <img id="12" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_12_12p.png" data-draggable="" style="top: 403.042px; left: 405.978px; position: absolute;" draggable="false">
+        <img id="13" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_13_12p.png" data-draggable="" style="top: 418.422px; left: 328.004px; position: absolute;" draggable="false">
+        <img id="14" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_14_12p.png" data-draggable="" style="top: 403.451px; left: 301.98px; position: absolute;" draggable="false">
+        <img id="15" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_15_12p.png" data-draggable="" style="top: 340.134px; left: 243.094px; position: absolute;" draggable="false">
+        <img id="16" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_16_12p.png" data-draggable="" style="top: 290.033px; left: 229.078px; position: absolute;" draggable="false">
+        <img id="17" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_17_12p.png" data-draggable="" style="top: 212.578px; left: 228.931px; position: absolute;" draggable="false">
+        <img id="18" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_18_12p.png" data-draggable="" style="top: 353.366px; left: 392.109px; position: absolute;" draggable="false">
+        <img id="19" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_19_12p.png" data-draggable="" style="top: 353.942px; left: 264.123px; position: absolute;" draggable="false">
+        <img id="20" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_20_12p.png" data-draggable="" style="top: 339.429px; left: 341.973px; position: absolute;" draggable="false">
+        <img id="21" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_21_12p.png" data-draggable="" style="top: 226.449px; left: 264.045px; position: absolute;" draggable="false">
+        <img id="22" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_22_12p.png" data-draggable="" style="top: 212px; left: 342.5px; position: absolute;" draggable="false">
+        <img id="23" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_23_12p.png" data-draggable="" style="top: 227.018px; left: 392.002px; position: absolute;" draggable="false">
+        <img id="24" class="puzzle-piece" src="assets/collage/cat-puzzle_24_12p.png" data-draggable="" style="top: 276px; left: 279px; position: absolute;" draggable="false">
+        <img id="25" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_25_12p.png" data-draggable="" style="top: 276.007px; left: 406.504px; position: absolute;" draggable="false">
+        <img id="26" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_26_12p.png" data-draggable="" style="top: 290px; left: 328px; position: absolute;" draggable="false">
+        <!-- Placeholder pieces -->
+        <img id="target_1" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_27_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_2" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_28_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_3" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_29_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_4" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_30_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_5" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_31_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_6" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_32_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_7" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_33_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_8" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_34_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_9" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_35_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_10" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_36_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_11" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_37_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_12" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_38_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_13" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_39_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_14" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_40_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_15" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_41_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_16" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_42_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_17" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_43_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_18" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_44_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_19" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_45_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_20" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_46_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_21" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_47_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_22" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_48_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_23" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_49_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_24" class="puzzle-piece piece-placeholder" src="assets/collage/cat-puzzle_solid_50_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_25" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_51_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        <img id="target_26" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_52_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+      </figure>
+      <input id="slider-test" class="slider" type="range" min=0 max=400 value=0 step="1" />
+      <form method="dialog">
+        <button id="verify" class="verify-button" disabled>Verify</button>
+      </form>
+    </dialog>
+  </body>
+</html>
