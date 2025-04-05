@@ -7,14 +7,6 @@
         font-family: Arial, Helvetica, sans-serif;
       }
 
-      body.default {
-        cursor: default;
-      }
-
-      body.grabbing {
-        cursor: grabbing;
-      }
-
       dialog::backdrop {
         background-color: rgba(0,0,0,0.45)
       }
@@ -44,15 +36,25 @@
       }
 
       .puzzle-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        height: 460px;
+        margin: 0;
+        min-width: 700px;
+        padding: 0;
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .puzzle-pieces {
         background-image:
           linear-gradient(rgb(255, 255, 255, 0.5),rgba(255, 255, 255, 0.5)),
           url("assets/pixel-background-1.png");
         border: 1px solid rgba(0, 0, 0, 0.75);
-        display: flex;
-        flex-wrap: wrap;
-        height: 500px;
+        height: 100%;
         margin: 0;
         padding: 0;
+        width: 100%;
       }
 
       .verify-button {
@@ -104,10 +106,20 @@
         filter: blur(5px);
       }
 
-      input[type=range].slider {
-        width: 100%;
-        background-color: transparent;
+      input[type=range].slider-vertical {
+        height: 100%;
+        writing-mode: vertical-lr;
+        margin: 0 0 0 20px;
+        width: 32px;
+      }
+
+      input[type=range].slider-horizontal {
         margin: 20px 0 0 0;
+        width: 100%;
+      }
+
+      input[type=range].slider {
+        background-color: transparent;
         -webkit-appearance: none;
       }
 
@@ -134,13 +146,17 @@
       }
 
       input[type=range].slider:focus::-webkit-slider-runnable-track {
-        /* not sure if this is enough */
-        /* border: 2px solid #CA4E4F; */
         background: #dddddd;
       }
 
+      input[type=range].slider-horizontal::-webkit-slider-thumb {
+        background-image: url('assets/arrow-horizontal.png');
+      }
+      input[type=range].slider-vertical::-webkit-slider-thumb {
+        background-image: url('assets/arrow-vertical.png');
+      }
+
       input[type=range].slider::-webkit-slider-thumb {
-        background-image: url('assets/arrow-bidirectional-circle.png');
         background-size: contain;
         background-repeat: no-repeat;
         cursor: pointer;
@@ -149,9 +165,16 @@
         -webkit-appearance: none;
       }
 
+      input[type=range].slider-horizontal::-moz-range-thumb {
+        background-image: url('assets/arrow-horizontal.png');
+      }
+
+      input[type=range].slider-vertical::-moz-range-thumb {
+        background-image: url('assets/arrow-vertical.png');
+      }
+
       input[type=range].slider::-moz-range-thumb {
         background: transparent;
-        background-image: url('assets/arrow-bidirectional-circle.png');
         background-size: contain;
         background-repeat: no-repeat;
         border: none;
@@ -161,155 +184,36 @@
       }
     </style>
     <script>
-      // Configuration
-      const ENVIRONMENT_CONFIG = {
-        setInitialPosition: false, // to position draggable elements in their initial place before making draggable
-      }
+      /**
+       * @typedef {(string|string[])} Direction
+       * 
+       * @typedef {Object} CoordinatesWPlaceholder
+       * @property {number|string} x
+       * @property {number|string} y
+       * 
+       * @typedef {Object} Coordinates
+       * @property {number} x
+       * @property {number} y
+       * 
+       * @typedef {Object} Piece
+       * @property {Coordinates} target
+       * @property {CoordinatesWPlaceholder} initial
+       * @property {Direction} direction
+       * 
+       * @typedef {Object.<string, Piece>} Pieces
+       * 
+       * @typedef {Object} Queue
+       * @property {string[]} queue
+       * 
+       * @typedef {Object} PiecesWQueue
+       * @property {Queue} queue
+       * @property {Pieces} pieces
+       */
 
-      const POSITION_BUFFER_PX = 5
-      const SLIDER_MAX = 500
-      const INITIAL_X_MIN = 100
-      const INITIAL_X_MAX = 600
-
-      const pieceQueue = ["24", "20", "3", "21", "16", "23", "6", "5", "25", "10", "11", "17", "9", "12", "19", "14", "13", "15", "1", "4", "2", "8", "7", "22", "18", "26"]
-
-      const pieces = {
-        "1": {
-          "target": { "x": 468, "y": 339 },
-          "initial": { "x": INITIAL_X_MAX, "y": 339 },
-          "direction": "left"
-        },
-        "2": {
-          "target": { "x": 469, "y": 230 },
-          "initial": { "x": INITIAL_X_MAX, "y": 230 },
-          "direction": "left"
-        },
-        "3": {
-          "target": { "x": 455, "y": 290 },
-          "initial": { "x": INITIAL_X_MIN, "y": 290 },
-          "direction": "right"
-        },
-        "4": {
-          "target": { "x": 445, "y": 152 },
-          "initial": { "x": INITIAL_X_MIN, "y": 152 },
-          "direction": "right"
-        },
-        "5": {
-          "target": { "x": 332, "y": 183 },
-          "initial": { "x": INITIAL_X_MIN, "y": 183 },
-          "direction": "right"
-        },
-        "6": {
-          "target": { "x": 405, "y": 166 },
-          "initial": { "x": INITIAL_X_MAX, "y": 166 },
-          "direction": "left"
-        },
-        "7": {
-          "target": { "x": 454, "y": 164 },
-          "initial": { "x": INITIAL_X_MAX, "y": 164 },
-          "direction": "left"
-        },
-        "8": {
-          "target": { "x": 469, "y": 116 },
-          "initial": { "x": INITIAL_X_MIN, "y": 116 },
-          "direction": "right"
-        },
-        "9": {
-          "target": { "x": 277, "y": 166 },
-          "initial": { "x": INITIAL_X_MAX, "y": 166 },
-          "direction": "left"
-        },
-        "10": {
-          "target": { "x": 241, "y": 145 },
-          "initial": { "x": INITIAL_X_MAX, "y": 145 },
-          "direction": "left"
-        },
-        "11": {
-          "target": { "x": 235, "y": 163 },
-          "initial": { "x": INITIAL_X_MIN, "y": 163 },
-          "direction": "right"
-        },
-        "12": {
-          "target": { "x": 405, "y": 403 },
-          "initial": { "x": INITIAL_X_MAX, "y": 403 },
-          "direction": "left"
-        },
-        "13": {
-          "target": { "x": 328, "y": 418 },
-          "initial": { "x": INITIAL_X_MAX, "y": 418 },
-          "direction": "left"
-        },
-        "14": {
-          "target": { "x": 301, "y": 403 },
-          "initial": { "x": INITIAL_X_MIN, "y": 403 },
-          "direction": "right"
-        },
-        "15": {
-          "target": { "x": 243, "y": 340 },
-          "initial": { "x": INITIAL_X_MIN, "y": 340 },
-          "direction": "right"
-        },
-        "16": {
-          "target": { "x": 229, "y": 290 },
-          "initial": { "x": INITIAL_X_MAX, "y": 290 },
-          "direction": "left",
-        },
-        "17": {
-          "target": { "x": 228, "y": 212 },
-          "initial": { "x": INITIAL_X_MIN, "y": 212 },
-          "direction": "right"
-        },
-        "18": {
-          "target": { "x": 392, "y": 353 },
-          "initial": { "x": INITIAL_X_MAX, "y": 353 },
-          "direction": "left"
-        },
-        // top: 354px; left: 266px; position: absolute;
-        "19": {
-          "target": { "x": 266, "y": 354 },
-          "initial": { "x": INITIAL_X_MIN, "y": 353 },
-          "direction": "right"
-        },
-        "20": {
-          "target": { "x": 341, "y": 339 },
-          "initial": { "x": INITIAL_X_MAX, "y": 339 },
-          "direction": "left"
-        },
-        "21": {
-          "target": { "x": 264, "y": 226 },
-          "initial": { "x": INITIAL_X_MAX, "y": 226 },
-          "direction": "left"
-        },
-        "22": {
-          "target": { "x": 342, "y": 212 },
-          "initial": { "x": INITIAL_X_MIN, "y": 212 },
-          "direction": "right"
-        },
-        "23": {
-          "target": { "x": 392, "y": 227 },
-          "initial": { "x": INITIAL_X_MIN, "y": 227 },
-          "direction": "right"
-        },
-        "24": {
-          "target": { "x": 279, "y": 276 },
-          "initial": { "x": INITIAL_X_MAX, "y": 276 },
-          "direction": "left"
-        },
-        "25": {
-          "target": { "x": 406, "y": 276 },
-          "initial": { "x": INITIAL_X_MIN, "y": 276 },
-          "direction": "right"
-        },
-        "26": {
-          "target": { "x": 328, "y": 290 },
-          "initial": { "x": INITIAL_X_MAX, "y": 290 },
-          "direction": "left"
-        }
-      }
-
-      // State
-      let selectedId = pieceQueue.shift()
-
+      /** 
+       * @param {HTMLElement} element
+       * @param {boolean} show
+       */
       function showElement(element, show) {
         if (!element) {
           return
@@ -322,6 +226,11 @@
         }
       }
 
+      /** 
+       * @param {HTMLElement} element
+       * @param {number} x
+       * @param {number} y
+       */
       function positionElement(element, x, y) {
         if (!element) {
           return
@@ -334,17 +243,60 @@
         }
       }
 
-      function showPieceAndTarget() {
-        const p = document.getElementById(selectedId)
+      /** @param {string} id */
+      function showPieceAndTarget(id) {
+        const p = document.getElementById(id)
         showElement(p, true)
-        const target = document.getElementById(`target_${selectedId}`)
+        const target = document.getElementById(`target_${id}`)
         showElement(target, true)
       }
 
-      function checkPiecePosition(slider) {
-        const piece = document.getElementById(selectedId)
-        const config = pieces[selectedId]
-        if (piece && config) {
+      /**
+       * @param {string|string[]} direction
+       * @return {"left"|"right"|undefined}
+       */
+       function horizontalDirection(direction) {
+        if (Array.isArray(direction)) {
+          if (direction.includes("left")) {
+            return "left"
+          }
+          if (direction.includes("right")) {
+            return "right"
+          }
+
+          return undefined
+        }
+        
+        return (direction === "left" || direction === "right") ? direction : undefined
+      }
+
+      /**
+       * @param {string|string[]} direction
+       * @return {"top"|"bottom"|undefined}
+       */
+       function verticalDirection(direction) {
+        if (Array.isArray(direction)) {
+          if (direction.includes("top")) {
+            return "top"
+          }
+          if (direction.includes("bottom")) {
+            return "bottom"
+          }
+
+          return undefined
+        }
+        
+        return (direction === "top" || direction === "bottom") ? direction : undefined
+      }
+
+      /** 
+       * @param {string} pieceId
+       * @param {HTMLElement} slider
+       */
+      function checkPiecePosition(pieceId, slider) {
+        const piece = document.getElementById(pieceId)
+        const config = pieces[pieceId]
+        if (piece && config && slider) {
           const targetX = config.target.x
           const targetY = config.target.y
           const x = parseInt(piece.style.getPropertyValue("left").replace("px", ""))
@@ -355,22 +307,23 @@
           if (xInRange && yInRange) {
             positionElement(piece, targetX, targetY)
             // Hide the target piece since it's no longer needed
-            const target = document.getElementById(`target_${selectedId}`)
+            const target = document.getElementById(`target_${pieceId}`)
             showElement(target, false)
             // Grab the next piece
-            selectedId = pieceQueue.shift()
+            selectedId = queue.shift()
             if (selectedId) {
               setTimeout(() => {
                 // Display it
-                showPieceAndTarget()
+                showPieceAndTarget(selectedId)
                 // Configure the next slider
-                configureSliderToSelectedPiece(slider)
+                configureSliderToPiece(selectedId)
               }, 250) // TODO: Could probably play with the timing here
             }
           }
         }
 
-        if (!selectedId) {
+        // Queue is empty so all pieces must be in the right place
+        if (queue.length === 0) {
           const submitButton = document.getElementById("verify")
           if (submitButton) {
             submitButton.removeAttribute("disabled")
@@ -378,43 +331,91 @@
         }
       }
 
-      function onSliderInput(e) {
-        const piece = document.getElementById(selectedId)
-        const config = pieces[selectedId]
-        if (piece && config) {
-          let newValue = -Infinity
-          let targetValue = -Infinity
-          if (config.direction === "left" || config.direction === "right") {
-            newValue = config.initial.x + e.target.valueAsNumber
-            targetValue = config.target.x
-            positionElement(piece, newValue, undefined)
-          }
+      /**
+       * @param {Event} e
+       * @param {string} pieceId
+       */
+      function onSliderChange(e, pieceId) {
+        return checkPiecePosition(pieceId, e.target)
+      }
+
+      /**
+       * @param {InputEvent} e
+       * @param {string} pieceId
+       * @param {"horizontal"|"vertical"} change
+       */
+      function onSliderInput(e, pieceId, change) {
+        const piece = document.getElementById(pieceId)
+        const config = pieces[pieceId]
+        if (!piece || !config) {
+          return
+        }
+
+        if (change === "horizontal") {
+          const newX = placeholderToInt(config.initial.x) + e.target.valueAsNumber
+          positionElement(piece, newX, undefined)
+        } else if (change === "vertical") {
+          const newY = placeholderToInt(config.initial.y) + e.target.valueAsNumber
+          positionElement(piece, undefined, newY)
         }
       }
 
-      function configureSliderToSelectedPiece(slider) {
-        if (!slider) {
+      /** @param {string} pieceId */
+      function configureSliderToPiece(pieceId) {
+        const piece = pieces[pieceId]
+        if (!piece) {
           return
         }
 
-        const config = pieces[selectedId]
-        if (!config) {
+        const sliderH = document.getElementById("slider-horizontal")
+        const directionH = horizontalDirection(piece.direction)
+        if (directionH) {
+          showElement(sliderH, true)
+          setSliderByDirection(sliderH, directionH)
+        } else {
+          showElement(sliderH, false)
+        }
+
+        const sliderV = document.getElementById("slider-vertical")
+        const directionV = verticalDirection(piece.direction)
+        if (directionV) {
+          showElement(sliderV, true)
+          setSliderByDirection(sliderV, directionV)
+        } else {
+          showElement(sliderV, false)
+        }
+
+        console.log(pieceId, piece, directionH, directionV)
+      }
+
+      /** 
+       * @param {HTMLElement} slider 
+       * @param {"left"|"right"|"top"|"bottom"} direction 
+       */
+      function setSliderByDirection(slider, direction) {
+        if (!slider || !direction) {
           return
         }
 
-        switch(config.direction) {
+        switch(direction) {
           case "left":
-            setSlider(slider, -SLIDER_MAX, 0, 0, onSliderInput)
-            break;
+            return setSlider(slider, -SLIDER_MAX, 0, 0)
           case "right":
-            setSlider(slider, 0, SLIDER_MAX, 0, onSliderInput)
-            break;
-          default:
-            break;
+            return setSlider(slider, 0, SLIDER_MAX, 0)
+          case "top":
+            return setSlider(slider, -SLIDER_MAX, 0, 0)
+          case "bottom":
+            return setSlider(slider, 0, SLIDER_MAX, 0)
         }
 
       }
 
+      /** 
+       * @param {HTMLElement} slider
+       * @param {number} min
+       * @param {number} max
+       * @param {number} value
+       */
       function setSlider(slider, min, max, value) {
         if (!slider) {
           return
@@ -424,42 +425,103 @@
         slider.value = value
       }
 
-      document.addEventListener("DOMContentLoaded", () => {
-        // Display dialogs as modals, which is needed for backdrops
-        const dialogs = ["verification-three"]
-        dialogs.forEach((id, idx) => {
-          const dialog = document.getElementById(id)
-          if (idx === 0 && dialog && dialog.localName === "dialog") {
-            dialog.showModal()
-          }
-        })
+      /** 
+       * @param {string|number} value 
+       * @return {number}
+       */
+      function placeholderToInt(value) {
+        if (Number.isInteger(value)) {
+          return value
+        }
 
-        // Position each piece initially
-        const allPieces = document.querySelectorAll(".puzzle-piece")
+        // A silly way for me to use placeholder values
+        // in the json doc and define their real values here
+        switch (value) {
+          case "INITIAL_X_MIN":
+            return INITIAL_X_MIN
+          case "INITIAL_X_MAX":
+            return INITIAL_X_MAX
+          case "INITIAL_Y_MIN":
+            return INITIAL_Y_MIN
+          case "INITIAL_Y_MAX":
+            return INITIAL_Y_MAX
+          default:
+            return 0
+        }
+      }
+
+      /** 
+       * @param {string} pieceClass
+       * @param {Pieces} piecesById
+       */
+      function positionPiecesWithTargets(pieceClass, piecesById) {
+        const allPieces = document.querySelectorAll(pieceClass)
         allPieces.forEach(p => {
           const id = p.getAttribute("id")
           const isTargetPiece = id.includes("target")
           const pieceId = isTargetPiece ? id.substring(7) : id // trim "target_" to look up position details
-          const position = pieces[pieceId]
-          if (position) {
-            const coord = isTargetPiece ? position.target : position.initial
-            if (coord) {
-              positionElement(p, coord.x, coord.y)
-            }
+          if (!pieceId) {
+            return
           }
+          const position = piecesById[pieceId]
+          if (!position) {
+            return
+          }
+
+          const coord = isTargetPiece ? position.target : position.initial
+          positionElement(p, placeholderToInt(coord.x), placeholderToInt(coord.y))
           showElement(p, false)
         })
+      }
 
-        // First piece is visible
-        showPieceAndTarget()
+      // Constants
+      const POSITION_BUFFER_PX = 5
+      const SLIDER_MAX = 500
+      const INITIAL_X_MIN = 100
+      const INITIAL_X_MAX = 600
+      const INITIAL_Y_MIN = 90
+      const INITIAL_Y_MAX = 440
 
-        // Add listener to the slider
-        const slider = document.getElementById("slider-test")
-        configureSliderToSelectedPiece(slider)
-        if (slider) {
-          slider.addEventListener("input", onSliderInput)
-          slider.addEventListener("change", (e) => checkPiecePosition(e.target))
+      /** @type {Promise<PiecesWQueue>} */
+      const puzzleRequest = fetch("assets/puzzle.json").then((resp) => resp.json()).catch(console.error)
+
+      // State
+      /** @type {Pieces} */
+      let pieces = {}
+      /** @type {Queue} */
+      let queue = []
+      let selectedId = ""
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Display dialog as modals, which is needed for backdrops
+        const dialog = document.getElementById("verification-three")
+        if (dialog && dialog.localName === "dialog") {
+          dialog.showModal()
         }
+
+        puzzleRequest.then((config) => {
+          // Set global state
+          pieces = config.pieces
+          queue = config.queue
+          selectedId = queue.shift()
+
+          // Position each piece initially
+          positionPiecesWithTargets(".puzzle-piece", pieces)
+
+          // Show the first piece and its placeholder target
+          showPieceAndTarget(selectedId)
+
+          // Show the relevant slider and configure it to the current piece
+          configureSliderToPiece(selectedId)
+
+          // Attach event listeners to each slider
+          const sliders = document.querySelectorAll(".slider")
+          sliders.forEach((s) => {
+            const direction = s.id === "slider-horizontal" ? "horizontal" : "vertical"
+            s.addEventListener("input", (e) => onSliderInput(e, selectedId, direction))
+            s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
+          })
+        })
       })
 
       window.addEventListener("load", () => {
@@ -481,12 +543,6 @@
         //   } else {
         //     console.warn("missing for", i)
         //   }
-          // current: "1",
-          // initial: { x: 132, y: 427 },
-          // target: { x: 300, y: 427 },
-          // direction: "right",
-          // next: "2",
-          
         // }
         // console.log("PIECES", JSON.stringify(pieces))
         // ---> this might be needed to set the size of containers where their content is positioned absolutely
@@ -519,89 +575,66 @@
       <div class="instruction-container">
         <h1 class="instruction">Slide the piece to finish the puzzle</h1>
       </div>
-      <figure class="puzzle-wrapper">
-        <img id="1" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_1_12p.png" data-draggable="" style="top: 339.429px; left: 468.964px; position: absolute;" draggable="false">
-        <img id="2" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_2_12p.png" data-draggable="" style="top: 230.022px; left: 469.011px; position: absolute;" draggable="false">
-        <img id="3" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_3_12p.png" data-draggable="" style="top: 290.413px; left: 455.074px; position: absolute;" draggable="false">
-        <img id="4" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_4_12p.png" data-draggable="" style="top: 152.107px; left: 445.029px; position: absolute;" draggable="false">
-        <img id="5" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_5_12p.png" data-draggable="" style="top: 183.009px; left: 332.076px; position: absolute;" draggable="false">
-        <img id="6" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_6_12p.png" data-draggable="" style="top: 166px; left: 405.978px; position: absolute;" draggable="false">
-        <img id="7" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_7_12p.png" data-draggable="" style="top: 164.027px; left: 454.933px; position: absolute;" draggable="false">
-        <img id="8" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_8_12p.png" data-draggable="" style="top: 116.46px; left: 469.045px; position: absolute;" draggable="false">
-        <img id="9" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_9_12p.png" data-draggable="" style="top: 166.504px; left: 277.935px; position: absolute;" draggable="false">
-        <img id="10" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_10_12p.png" data-draggable="" style="top: 145.5px; left: 241.531px; position: absolute;" draggable="false">
-        <img id="11" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_11_12p.png" data-draggable="" style="top: 163.388px; left: 235.978px; position: absolute;" draggable="false">
-        <img id="12" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_12_12p.png" data-draggable="" style="top: 403.042px; left: 405.978px; position: absolute;" draggable="false">
-        <img id="13" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_13_12p.png" data-draggable="" style="top: 418.422px; left: 328.004px; position: absolute;" draggable="false">
-        <img id="14" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_14_12p.png" data-draggable="" style="top: 403.451px; left: 301.98px; position: absolute;" draggable="false">
-        <img id="15" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_15_12p.png" data-draggable="" style="top: 340.134px; left: 243.094px; position: absolute;" draggable="false">
-        <img id="16" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_16_12p.png" data-draggable="" style="top: 290.033px; left: 229.078px; position: absolute;" draggable="false">
-        <img id="17" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_17_12p.png" data-draggable="" style="top: 212.578px; left: 228.931px; position: absolute;" draggable="false">
-        <img id="18" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_18_12p.png" data-draggable="" style="top: 353.366px; left: 392.109px; position: absolute;" draggable="false">
-        <img id="19" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_19_12p.png" data-draggable="" style="top: 353.942px; left: 264.123px; position: absolute;" draggable="false">
-        <img id="20" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_20_12p.png" data-draggable="" style="top: 339.429px; left: 341.973px; position: absolute;" draggable="false">
-        <img id="21" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_21_12p.png" data-draggable="" style="top: 226.449px; left: 264.045px; position: absolute;" draggable="false">
-        <img id="22" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_22_12p.png" data-draggable="" style="top: 212px; left: 342.5px; position: absolute;" draggable="false">
-        <img id="23" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_23_12p.png" data-draggable="" style="top: 227.018px; left: 392.002px; position: absolute;" draggable="false">
-        <img id="24" class="puzzle-piece" src="assets/collage/cat-puzzle_24_12p.png" data-draggable="" style="top: 276px; left: 279px; position: absolute;" draggable="false">
-        <img id="25" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_25_12p.png" data-draggable="" style="top: 276.007px; left: 406.504px; position: absolute;" draggable="false">
-        <img id="26" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_26_12p.png" data-draggable="" style="top: 290px; left: 328px; position: absolute;" draggable="false">
-        <!-- Placeholder pieces (BLACK) -->
-        <img id="target_1" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_1_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_2" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_2_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_3" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_3_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_4" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_4_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_5" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_5_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_6" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_6_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_7" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_7_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_8" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_8_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_9" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_9_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_10" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_10_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_11" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_11_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_12" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_12_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_13" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_13_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_14" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_14_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_15" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_15_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_16" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_16_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_17" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_17_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_18" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_18_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_19" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_19_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_20" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_20_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_21" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_21_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_22" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_22_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_23" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_23_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_24" class="puzzle-piece piece-placeholder" src="assets/collage/cat-puzzle_solid_24_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_25" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_25_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_26" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_26_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <!-- Placeholder pieces (WHITE) -->
-        <!-- <img id="target_1" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_27_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_2" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_28_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_3" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_29_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_4" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_30_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_5" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_31_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_6" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_32_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_7" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_33_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_8" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_34_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_9" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_35_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_10" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_36_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_11" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_37_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_12" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_38_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_13" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_39_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_14" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_40_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_15" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_41_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_16" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_42_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_17" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_43_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_18" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_44_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_19" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_45_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_20" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_46_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_21" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_47_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_22" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_48_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_23" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_49_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_24" class="puzzle-piece piece-placeholder" src="assets/collage/cat-puzzle_solid_50_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_25" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_51_12p.png" data-draggable="" style="position: absolute;" draggable="false">
-        <img id="target_26" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_52_12p.png" data-draggable="" style="position: absolute;" draggable="false"> -->
-      </figure>
-      <input id="slider-test" class="slider" type="range" value=0 step="5" />
+      <div class="puzzle-wrapper">
+        <figure class="puzzle-pieces">
+          <img id="1" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_1_12p.png" data-draggable="" style="top: 339.429px; left: 468.964px; position: absolute;" draggable="false">
+          <img id="2" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_2_12p.png" data-draggable="" style="top: 230.022px; left: 469.011px; position: absolute;" draggable="false">
+          <img id="3" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_3_12p.png" data-draggable="" style="top: 290.413px; left: 455.074px; position: absolute;" draggable="false">
+          <img id="4" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_4_12p.png" data-draggable="" style="top: 152.107px; left: 445.029px; position: absolute;" draggable="false">
+          <img id="5" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_5_12p.png" data-draggable="" style="top: 183.009px; left: 332.076px; position: absolute;" draggable="false">
+          <img id="6" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_6_12p.png" data-draggable="" style="top: 166px; left: 405.978px; position: absolute;" draggable="false">
+          <img id="7" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_7_12p.png" data-draggable="" style="top: 164.027px; left: 454.933px; position: absolute;" draggable="false">
+          <img id="8" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_8_12p.png" data-draggable="" style="top: 116.46px; left: 469.045px; position: absolute;" draggable="false">
+          <img id="9" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_9_12p.png" data-draggable="" style="top: 166.504px; left: 277.935px; position: absolute;" draggable="false">
+          <img id="10" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_10_12p.png" data-draggable="" style="top: 145.5px; left: 241.531px; position: absolute;" draggable="false">
+          <img id="11" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_11_12p.png" data-draggable="" style="top: 163.388px; left: 235.978px; position: absolute;" draggable="false">
+          <img id="12" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_12_12p.png" data-draggable="" style="top: 403.042px; left: 405.978px; position: absolute;" draggable="false">
+          <img id="13" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_13_12p.png" data-draggable="" style="top: 418.422px; left: 328.004px; position: absolute;" draggable="false">
+          <img id="14" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_14_12p.png" data-draggable="" style="top: 403.451px; left: 301.98px; position: absolute;" draggable="false">
+          <img id="15" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_15_12p.png" data-draggable="" style="top: 340.134px; left: 243.094px; position: absolute;" draggable="false">
+          <img id="16" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_16_12p.png" data-draggable="" style="top: 290.033px; left: 229.078px; position: absolute;" draggable="false">
+          <img id="17" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_17_12p.png" data-draggable="" style="top: 212.578px; left: 228.931px; position: absolute;" draggable="false">
+          <img id="18" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_18_12p.png" data-draggable="" style="top: 353.366px; left: 392.109px; position: absolute;" draggable="false">
+          <img id="19" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_19_12p.png" data-draggable="" style="top: 353.942px; left: 264.123px; position: absolute;" draggable="false">
+          <img id="20" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_20_12p.png" data-draggable="" style="top: 339.429px; left: 341.973px; position: absolute;" draggable="false">
+          <img id="21" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_21_12p.png" data-draggable="" style="top: 226.449px; left: 264.045px; position: absolute;" draggable="false">
+          <img id="22" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_22_12p.png" data-draggable="" style="top: 212px; left: 342.5px; position: absolute;" draggable="false">
+          <img id="23" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_23_12p.png" data-draggable="" style="top: 227.018px; left: 392.002px; position: absolute;" draggable="false">
+          <img id="24" class="puzzle-piece" src="assets/collage/cat-puzzle_24_12p.png" data-draggable="" style="top: 276px; left: 279px; position: absolute;" draggable="false">
+          <img id="25" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_25_12p.png" data-draggable="" style="top: 276.007px; left: 406.504px; position: absolute;" draggable="false">
+          <img id="26" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_26_12p.png" data-draggable="" style="top: 290px; left: 328px; position: absolute;" draggable="false">
+          <!-- Placeholder pieces (BLACK) -->
+          <img id="target_1" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_1_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_2" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_2_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_3" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_3_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_4" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_4_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_5" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_5_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_6" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_6_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_7" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_7_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_8" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_8_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_9" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_9_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_10" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_10_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_11" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_11_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_12" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_12_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_13" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_13_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_14" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_14_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_15" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_15_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_16" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_16_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_17" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_17_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_18" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_18_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_19" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_19_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_20" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_20_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_21" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_21_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_22" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_22_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_23" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_23_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_24" class="puzzle-piece piece-placeholder" src="assets/collage/cat-puzzle_solid_24_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_25" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_25_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_26" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_26_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        </figure>
+        <input id="slider-vertical" class="slider slider-vertical" type="range" value=0 step="5" orient="horizontal"/>
+      </div>
+      <!-- TODO: Add accessible labels to these inputs pls -->
+      <input id="slider-horizontal" class="slider slider-horizontal" type="range" value=0 step="5" />
       <form method="dialog">
         <button id="verify" class="verify-button" disabled>Verify</button>
       </form>
