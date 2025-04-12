@@ -96,28 +96,37 @@
         filter: blur(5px);
       }
 
-      input[type=range].slider-vertical {
-        height: 100%;
-        writing-mode: vertical-lr;
-        margin: 0 0 0 20px;
-        width: 32px;
-      }
-
-      input[type=range].slider-horizontal {
-        margin: 20px 0 0 0;
-        width: 100%;
-      }
-
-      input[type=range].slider {
+      .slider {
         background-color: transparent;
         -webkit-appearance: none;
       }
 
-      input[type=range].slider:focus {
+
+      .slider-vertical {
+        margin: 0 0 0 20px;
+      }
+
+      .slider-rotate {
+        margin: 0 20px 0 0;
+      }
+
+      .slider-horizontal {
+        margin: 20px 0 0 0;
+        width: 100%;
+      }
+
+      .slider-rotate,
+      .slider-vertical {
+        height: 100%;
+        writing-mode: vertical-lr;
+        width: 32px;
+      }
+
+      .slider:focus {
         outline: none;
       }
 
-      input[type=range].slider::-webkit-slider-runnable-track {
+      .slider::-webkit-slider-runnable-track {
         background: #eeeeee;
         border: 1px solid black;
         border-radius: 15px;
@@ -126,27 +135,37 @@
         cursor: pointer;
       }
 
-      input[type=range].slider::-moz-range-track {
+      .slider::-moz-range-track {
         background: #eeeeee;
         border: 1px solid black;
         border-radius: 15px;
         width: 100%;
-        height: 32px;
         cursor: pointer;
       }
 
-      input[type=range].slider:focus::-webkit-slider-runnable-track {
+      .slider.slider-horizontal::-moz-range-track {
+        height: 32px;
+      }
+
+      .slider.slider-rotate::-moz-range-track,
+      .slider.slider-vertical::-moz-range-track {
+        width: 30px;
+      }
+
+      .slider:focus::-webkit-slider-runnable-track {
         background: #dddddd;
       }
 
-      input[type=range].slider-horizontal::-webkit-slider-thumb {
+      .slider.slider-horizontal::-webkit-slider-thumb {
         background-image: url('assets/arrow-horizontal.png');
       }
-      input[type=range].slider-vertical::-webkit-slider-thumb {
+
+      .slider.slider-rotate::-webkit-slider-thumb,
+      .slider.slider-vertical::-webkit-slider-thumb {
         background-image: url('assets/arrow-vertical.png');
       }
 
-      input[type=range].slider::-webkit-slider-thumb {
+      .slider::-webkit-slider-thumb {
         background-size: contain;
         background-repeat: no-repeat;
         cursor: pointer;
@@ -155,31 +174,34 @@
         -webkit-appearance: none;
       }
 
-      input[type=range].slider-horizontal::-moz-range-thumb {
-        background-image: url('assets/arrow-horizontal.png');
-      }
-
-      input[type=range].slider-vertical::-moz-range-thumb {
-        background-image: url('assets/arrow-vertical.png');
-      }
-
-      input[type=range].slider::-moz-range-thumb {
-        background: transparent;
+      .slider::-moz-range-thumb {
+        background-color: transparent;
         background-size: contain;
         background-repeat: no-repeat;
-        border: none;
+        border: 1px transparent solid;
         cursor: pointer;
         height: 30px;
         width: 30px;
       }
+
+      .slider.slider-horizontal::-moz-range-thumb {
+        background-image: url('assets/arrow-horizontal.png');
+      }
+
+      .slider.slider-rotate::-moz-range-thumb,
+      .slider.slider-vertical::-moz-range-thumb {
+        background-image: url('assets/arrow-vertical.png');
+      }
     </style>
     <script>
       /**
-       * @typedef {(string|string[])} Direction
+       * @typedef {"left"|"right"|"top"|"bottom"|"rotate"} DirectionString
+       * @typedef {(DirectionString|DirectionString[])} Direction
        * 
-       * @typedef {Object} CoordinatesWPlaceholder
-       * @property {number|string} x
-       * @property {number|string} y
+       * @typedef {Object} CoordinatesWithRotate
+       * @property {number} x
+       * @property {number} y
+       * @property {number|undefined} rotate
        * 
        * @typedef {Object} Coordinates
        * @property {number} x
@@ -187,7 +209,7 @@
        * 
        * @typedef {Object} Piece
        * @property {Coordinates} target
-       * @property {CoordinatesWPlaceholder} initial
+       * @property {CoordinatesWithRotate} initial
        * @property {Direction} direction
        * 
        * @typedef {Object.<string, Piece>} Pieces
@@ -230,6 +252,19 @@
         }
         if (y !== undefined) {
           element.style.setProperty("top", y + "px")
+        }
+      }
+
+      /** 
+       * @param {HTMLElement} element
+       * @param {number} degrees
+       */
+       function rotateElement(element, degrees) {
+        if (!element) {
+          return
+        }
+        if (degrees !== undefined) {
+          element.style.setProperty("rotate", degrees + "deg")
         }
       }
 
@@ -279,6 +314,22 @@
         return (direction === "top" || direction === "bottom") ? direction : undefined
       }
 
+      /**
+       * @param {string|string[]} direction
+       * @return {"rotate"|undefined}
+       */
+       function rotateDirection(direction) {
+        if (Array.isArray(direction)) {
+          if (direction.includes("rotate")) {
+            return "rotate"
+          }
+
+          return undefined
+        }
+
+        return direction === "rotate"  ? direction : undefined
+      }
+
       /** 
        * @param {string} pieceId
        * @param {HTMLElement} slider
@@ -293,8 +344,19 @@
           const y = parseInt(piece.style.getPropertyValue("top").replace("px", ""))
           const xInRange =  x >= targetX - POSITION_BUFFER_PX &&  x <= targetX + POSITION_BUFFER_PX
           const yInRange =  y >= targetY - POSITION_BUFFER_PX &&  y <= targetY + POSITION_BUFFER_PX
+
+          let rotationInRange = true
+          const cssRotation = piece.style.getPropertyValue("rotate")
+          if (cssRotation && cssRotation.length) {
+            const rotation = parseInt(cssRotation.replace("deg", "")) % 360
+            // Allow pieces to be right side up or upside down
+            if (rotation !== 0 && rotation !== 180) {
+              rotationInRange = false
+            }
+          }
+
           // Check to see if piece is in the right area
-          if (xInRange && yInRange) {
+          if (xInRange && yInRange && rotationInRange) {
             positionElement(piece, targetX, targetY)
             // Hide the target piece since it's no longer needed
             const target = document.getElementById(`target_${pieceId}`)
@@ -332,7 +394,7 @@
       /**
        * @param {InputEvent} e
        * @param {string} pieceId
-       * @param {"horizontal"|"vertical"} change
+       * @param {"horizontal"|"vertical"|"rotate"} change
        */
       function onSliderInput(e, pieceId, change) {
         const piece = document.getElementById(pieceId)
@@ -347,6 +409,9 @@
         } else if (change === "vertical") {
           const newY = config.initial.y + e.target.valueAsNumber
           positionElement(piece, undefined, newY)
+        } else if (change === "rotate") {
+          const newDegreeRotation = (config.initial.rotate ?? 0) + e.target.valueAsNumber
+          rotateElement(piece, newDegreeRotation)
         }
       }
 
@@ -374,11 +439,20 @@
         } else {
           showElement(sliderV, false)
         }
+
+        const sliderR = document.getElementById("slider-rotate")
+        const directionR = rotateDirection(piece.direction)
+        if (directionR) {
+          showElement(sliderR, true)
+          setSliderByDirection(sliderR, directionR)
+        } else {
+          showElement(sliderR, false)
+        }
       }
 
       /** 
        * @param {HTMLElement} slider 
-       * @param {"left"|"right"|"top"|"bottom"} direction 
+       * @param {DirectionString} direction 
        */
       function setSliderByDirection(slider, direction) {
         if (!slider || !direction) {
@@ -394,6 +468,8 @@
             return setSlider(slider, -SLIDER_MAX, 0, 0)
           case "bottom":
             return setSlider(slider, 0, SLIDER_MAX, 0)
+          case "rotate":
+            return setSlider(slider, 0, 360, 0)
         }
 
       }
@@ -415,7 +491,7 @@
 
       /** 
        * @param {Piece} piece
-       * @return {Coordinates}
+       * @return {CoordinatesWithRotate}
        */
       function calculateInitialPosition(piece) {
         if (!piece) {
@@ -447,7 +523,15 @@
             break
         }
 
-        return { x, y }
+        const coord = { x, y }
+
+        if (rotateDirection(piece.direction)) {
+          // For now, just set a random rotation since I removed all initial position spec from the file
+          const randomDegree = 15 * (Math.round(Math.random() * 24))
+          coord.rotate = randomDegree
+        }
+
+        return coord
       }
 
       /** 
@@ -475,7 +559,7 @@
         allPieces.forEach(p => {
           const id = p.getAttribute("id")
           const isTargetPiece = id.includes("target")
-          const pieceId = isTargetPiece ? id.substring(7) : id // trim "target_" to look up position details
+          const pieceId = isTargetPiece ? id.replace("target_", "") : id
           if (!pieceId) {
             return
           }
@@ -486,6 +570,9 @@
 
           const coord = isTargetPiece ? position.target : position.initial
           positionElement(p, coord.x, coord.y)
+          if (!isTargetPiece && coord.rotate) {
+            rotateElement(p, coord.rotate)
+          }
           showElement(p, false)
         })
       }
@@ -541,7 +628,7 @@
           // Attach event listeners to each slider
           const sliders = document.querySelectorAll(".slider")
           sliders.forEach((s) => {
-            const direction = s.id === "slider-horizontal" ? "horizontal" : "vertical"
+            const direction = s.id.replace("slider-", "")
             s.addEventListener("input", (e) => onSliderInput(e, selectedId, direction))
             s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
           })
@@ -601,6 +688,7 @@
         <h1 class="instruction">Slide the piece to finish the puzzle</h1>
       </div>
       <div class="puzzle-wrapper">
+        <input id="slider-rotate" class="slider slider-rotate hidden" type="range" value=0 step="5" min="0" max="360" orient="horizontal"/>
         <figure class="puzzle-pieces">
           <img id="1" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_1_12p.png" data-draggable="" style="top: 339.429px; left: 468.964px; position: absolute;" draggable="false">
           <img id="2" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_2_12p.png" data-draggable="" style="top: 230.022px; left: 469.011px; position: absolute;" draggable="false">
@@ -656,7 +744,7 @@
           <img id="target_25" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_25_12p.png" data-draggable="" style="position: absolute;" draggable="false">
           <img id="target_26" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_26_12p.png" data-draggable="" style="position: absolute;" draggable="false">
         </figure>
-        <input id="slider-vertical" class="slider slider-vertical" type="range" value=0 step="5" orient="horizontal"/>
+        <input id="slider-vertical" class="slider slider-vertical hidden" type="range" value=0 step="5" orient="horizontal"/>
       </div>
       <!-- TODO: Add accessible labels to these inputs pls -->
       <input id="slider-horizontal" class="slider slider-horizontal" type="range" value=0 step="5" />
