@@ -76,16 +76,6 @@
         cursor: not-allowed;
       }
 
-      /* [data-draggable] {
-        display: inline-block;
-        user-select: none;
-        margin: 0;
-      }
-
-      [data-draggable]:hover {
-        cursor: grab;
-      } */
-
       .hidden {
         display: none;
       }
@@ -266,7 +256,7 @@
 
           return undefined
         }
-        
+
         return (direction === "left" || direction === "right") ? direction : undefined
       }
 
@@ -285,7 +275,7 @@
 
           return undefined
         }
-        
+
         return (direction === "top" || direction === "bottom") ? direction : undefined
       }
 
@@ -352,10 +342,10 @@
         }
 
         if (change === "horizontal") {
-          const newX = placeholderToInt(config.initial.x) + e.target.valueAsNumber
+          const newX = config.initial.x + e.target.valueAsNumber
           positionElement(piece, newX, undefined)
         } else if (change === "vertical") {
-          const newY = placeholderToInt(config.initial.y) + e.target.valueAsNumber
+          const newY = config.initial.y + e.target.valueAsNumber
           positionElement(piece, undefined, newY)
         }
       }
@@ -424,28 +414,56 @@
       }
 
       /** 
-       * @param {string|number} value 
-       * @return {number}
+       * @param {Piece} piece
+       * @return {Coordinates}
        */
-      function placeholderToInt(value) {
-        if (Number.isInteger(value)) {
-          return value
+      function calculateInitialPosition(piece) {
+        if (!piece) {
+          return
+        }
+        let x = piece.target.x
+        const horizontal = horizontalDirection(piece.direction)
+        switch(horizontal) {
+          case "left":
+            // Start on the right if moving left
+            x = INITIAL_X_MAX
+            break
+          case "right":
+            // Start on the left if moving right
+            x = INITIAL_X_MIN
+            break
         }
 
-        // A silly way for me to use placeholder values
-        // in the json doc and define their real values here
-        switch (value) {
-          case "INITIAL_X_MIN":
-            return INITIAL_X_MIN
-          case "INITIAL_X_MAX":
-            return INITIAL_X_MAX
-          case "INITIAL_Y_MIN":
-            return INITIAL_Y_MIN
-          case "INITIAL_Y_MAX":
-            return INITIAL_Y_MAX
-          default:
-            return 0
+        let y = piece.target.y
+        const vertical = verticalDirection(piece.direction)
+        switch(vertical) {
+          case "top":
+            // Start on the bottom if moving to top
+            y = INITIAL_Y_MAX
+            break
+          case "bottom":
+            // Start on the top if moving to bottom
+            y = INITIAL_Y_MIN
+            break
         }
+
+        return { x, y }
+      }
+
+      /** 
+       * @param {Pieces} pieces
+       * @return {Pieces}
+       */
+      function piecesWithInitialPosition(pieces) {
+        /** @type {Pieces} */
+        const updated = {}
+        for (const id in pieces) {
+          const piece = pieces[id]
+          const initial = calculateInitialPosition(piece)
+          updated[id] = { ...piece, initial }
+        }
+
+        return updated
       }
 
       /** 
@@ -467,7 +485,7 @@
           }
 
           const coord = isTargetPiece ? position.target : position.initial
-          positionElement(p, placeholderToInt(coord.x), placeholderToInt(coord.y))
+          positionElement(p, coord.x, coord.y)
           showElement(p, false)
         })
       }
@@ -481,7 +499,15 @@
       const INITIAL_Y_MAX = 440
 
       /** @type {Promise<PiecesWQueue>} */
-      const puzzleRequest = fetch("assets/puzzle.json").then((resp) => resp.json()).catch(console.error)
+      const puzzleRequest = fetch("assets/puzzle_directions.json")
+        .then((resp) => resp.json())
+        .catch((err) => {
+          console.error("Error processing puzzle data", err)
+          return {
+            pieces: {},
+            queue: [],
+          }
+        })
 
       // State
       /** @type {Pieces} */
@@ -499,7 +525,7 @@
 
         puzzleRequest.then((config) => {
           // Set global state
-          pieces = config.pieces
+          pieces = piecesWithInitialPosition(config.pieces)
           queue = config.queue
           selectedId = queue.shift()
 
@@ -566,7 +592,8 @@
         // }, 1000)
       })
     </script>
-    <!-- <script src="draggable.js" defer></script> -->
+    <!-- Only for dev -->
+    <script src="draggable.js" defer></script>
   </head>
   <body draggable="false">
     <dialog id="verification-three" class="instructions">

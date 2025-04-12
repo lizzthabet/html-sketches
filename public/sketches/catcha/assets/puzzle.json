@@ -3,132 +3,106 @@
   "pieces": {
     "1": {
       "target": { "x": 468, "y": 339 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 339 },
       "direction": "left"
     },
     "2": {
       "target": { "x": 469, "y": 230 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 230 },
       "direction": "left"
     },
     "3": {
       "target": { "x": 455, "y": 290 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 290 },
       "direction": "right"
     },
     "4": {
       "target": { "x": 445, "y": 152 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 152 },
       "direction": "right"
     },
     "5": {
       "target": { "x": 332, "y": 183 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 183 },
       "direction": "right"
     },
     "6": {
       "target": { "x": 405, "y": 166 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 166 },
       "direction": "left"
     },
     "7": {
       "target": { "x": 454, "y": 164 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 164 },
       "direction": "left"
     },
     "8": {
       "target": { "x": 469, "y": 116 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 116 },
       "direction": "right"
     },
     "9": {
       "target": { "x": 277, "y": 166 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 166 },
       "direction": "left"
     },
     "10": {
       "target": { "x": 241, "y": 145 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 145 },
       "direction": "left"
     },
     "11": {
       "target": { "x": 235, "y": 163 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 163 },
       "direction": "right"
     },
     "12": {
       "target": { "x": 405, "y": 403 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 403 },
       "direction": "left"
     },
     "13": {
       "target": { "x": 328, "y": 418 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 418 },
       "direction": "left"
     },
     "14": {
       "target": { "x": 301, "y": 403 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 403 },
       "direction": "right"
     },
     "15": {
       "target": { "x": 243, "y": 340 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 340 },
       "direction": "right"
     },
     "16": {
       "target": { "x": 229, "y": 290 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 290 },
       "direction": "left"
     },
     "17": {
       "target": { "x": 228, "y": 212 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 212 },
       "direction": "right"
     },
     "18": {
       "target": { "x": 392, "y": 353 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 353 },
       "direction": "left"
     },
     "19": {
       "target": { "x": 266, "y": 354 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 353 },
       "direction": "right"
     },
     "20": {
       "target": { "x": 341, "y": 339 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 339 },
       "direction": "left"
     },
     "21": {
       "target": { "x": 264, "y": 226 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 226 },
       "direction": "left"
     },
     "22": {
       "target": { "x": 342, "y": 212 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 212 },
       "direction": "right"
     },
     "23": {
       "target": { "x": 392, "y": 227 },
-      "initial": { "x": "INITIAL_X_MIN", "y": "INITIAL_Y_MIN" },
       "direction": ["right", "bottom"]
     },
     "24": {
       "target": { "x": 279, "y": 276 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 276 },
       "direction": "left"
     },
     "25": {
       "target": { "x": 406, "y": 276 },
-      "initial": { "x": "INITIAL_X_MIN", "y": 276 },
       "direction": "right"
     },
     "26": {
       "target": { "x": 328, "y": 290 },
-      "initial": { "x": "INITIAL_X_MAX", "y": 290 },
       "direction": "left"
     }
   }
