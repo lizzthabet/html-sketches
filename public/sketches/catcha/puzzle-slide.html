@@ -160,7 +160,10 @@
         background-image: url('assets/arrow-horizontal.png');
       }
 
-      .slider.slider-rotate::-webkit-slider-thumb,
+      .slider.slider-rotate::-webkit-slider-thumb {
+        background-image: url('assets/arrow-rotate.png');
+      }
+
       .slider.slider-vertical::-webkit-slider-thumb {
         background-image: url('assets/arrow-vertical.png');
       }
@@ -221,6 +224,15 @@
        * @property {Queue} queue
        * @property {Pieces} pieces
        */
+
+      // Constants
+      const POSITION_BUFFER_PX = 5
+      const POSITION_BUFFER_DEG = 10
+      const SLIDER_MAX = 500
+      const INITIAL_X_MIN = 100
+      const INITIAL_X_MAX = 600
+      const INITIAL_Y_MIN = 90
+      const INITIAL_Y_MAX = 440
 
       /** 
        * @param {HTMLElement} element
@@ -346,18 +358,24 @@
           const yInRange =  y >= targetY - POSITION_BUFFER_PX &&  y <= targetY + POSITION_BUFFER_PX
 
           let rotationInRange = true
+          let rotation = 0
           const cssRotation = piece.style.getPropertyValue("rotate")
           if (cssRotation && cssRotation.length) {
-            const rotation = parseInt(cssRotation.replace("deg", "")) % 360
+            rotation = parseInt(cssRotation.replace("deg", "")) % 360
             // Allow pieces to be right side up or upside down
-            if (rotation !== 0 && rotation !== 180) {
+            const rightSideUpInRange = rotation >= 0 && rotation <= 0 + POSITION_BUFFER_DEG
+            const upsideDownInRange = rotation >= 180 - POSITION_BUFFER_DEG && rotation <= 180 + POSITION_BUFFER_DEG 
+            if (!rightSideUpInRange && !upsideDownInRange) {
               rotationInRange = false
             }
           }
 
           // Check to see if piece is in the right area
           if (xInRange && yInRange && rotationInRange) {
+            // "Snap" piece into place
             positionElement(piece, targetX, targetY)
+            const closestDeg = (rotation <= 90 || rotation > 270) ? 0 : 180
+            rotateElement(piece, closestDeg)
             // Hide the target piece since it's no longer needed
             const target = document.getElementById(`target_${pieceId}`)
             showElement(target, false)
@@ -538,7 +556,7 @@
        * @param {Pieces} pieces
        * @return {Pieces}
        */
-      function piecesWithInitialPosition(pieces) {
+      function withInitialPosition(pieces) {
         /** @type {Pieces} */
         const updated = {}
         for (const id in pieces) {
@@ -577,14 +595,6 @@
         })
       }
 
-      // Constants
-      const POSITION_BUFFER_PX = 5
-      const SLIDER_MAX = 500
-      const INITIAL_X_MIN = 100
-      const INITIAL_X_MAX = 600
-      const INITIAL_Y_MIN = 90
-      const INITIAL_Y_MAX = 440
-
       /** @type {Promise<PiecesWQueue>} */
       const puzzleRequest = fetch("assets/puzzle_directions.json")
         .then((resp) => resp.json())
@@ -612,7 +622,7 @@
 
         puzzleRequest.then((config) => {
           // Set global state
-          pieces = piecesWithInitialPosition(config.pieces)
+          pieces = withInitialPosition(config.pieces)
           queue = config.queue
           selectedId = queue.shift()
 
@@ -633,50 +643,6 @@
             s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
           })
         })
-      })
-
-      window.addEventListener("load", () => {
-        // const pieces = {}
-        // for (let i = 1; i < 27; i++) {
-        //   const piece = document.getElementById(`${i}`)
-        //   if (piece) {
-        //     const position = {
-        //       current: `${i}`,
-        //       next: `${i < 26 ? i + 1 : ""}`,
-        //       target: {
-        //         x: Math.round(parseInt(piece.style["left"].replace(/px$/))),
-        //         y: Math.round(parseInt(piece.style["top"].replace(/px$/))),
-        //       },
-        //       initial: undefined,
-        //       direction: undefined,
-        //     }
-        //     pieces[`${i}`] = position
-        //   } else {
-        //     console.warn("missing for", i)
-        //   }
-        // }
-        // console.log("PIECES", JSON.stringify(pieces))
-        // ---> this might be needed to set the size of containers where their content is positioned absolutely
-        // const verification = document.getElementById("verification")
-        // if (verification) {
-        //   const { height, width } = verification.getBoundingClientRect()
-        //   verification.style.setProperty("width", width + "px")
-        //   verification.style.setProperty("height", height + "px")
-        // }
-
-        // Batch reposition a set of elements in relation to a parent element
-        // setTimeout(() => {
-        //   const wrapper = document.getElementById("verification-two")
-        //   if (wrapper) {
-        //     const { top } = wrapper.getBoundingClientRect()
-        //     const draggables = document.querySelectorAll("#puzzles-two > [data-draggable]")
-        //     draggables.forEach((d) => {
-        //       const { top: currentTop } = d.getBoundingClientRect()
-        //       console.log(top, currentTop)
-        //       d.style.setProperty("top", currentTop - top + "px")
-        //     })
-        //   }
-        // }, 1000)
       })
     </script>
     <!-- Only for dev -->
