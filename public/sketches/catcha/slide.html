@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .wrapper {
+        height: 650px;
+        width: 750px;
+        margin: 0 auto;
+      }
+
+      .instruction-container {
+        color: #5a5a5a;
+        text-align: center;
+        /* TODO: redo spacing layout */
+        margin-bottom: 15px;
+      }
+
+      .instruction {
+        font-size: 1.125rem;
+        font-weight: bold;
+      }
+
+      .puzzle-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        height: 460px;
+        margin: 0;
+        min-width: 700px;
+        padding: 0;
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .puzzle-pieces {
+        background-image:
+          linear-gradient(rgb(255, 255, 255, 0.5),rgba(255, 255, 255, 0.5)),
+          url("assets/pixel-background-1.png");
+        border: 1px solid rgba(0, 0, 0, 0.75);
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+      }
+
+      .verify-button {
+        background-color: #56ad48;
+        border: none;
+        border-radius: 2px;
+        color: white;
+        cursor: pointer;
+        font-size: 1.125rem;
+        padding: 10px 10px;
+        display: block;
+        /* TODO: redo spacing layout */
+        margin: 35px 0 0 auto;
+        width: 100px;
+      }
+
+      .verify-button:disabled {
+        /* this can be improved lol */
+        background-color: #5a5a5a;
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .puzzle-piece {
+        z-index: 2;
+      }
+
+      .piece-placeholder {
+        opacity: 0.65;
+        z-index: 1;
+      }
+
+      .cat-news {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        filter: blur(5px);
+      }
+
+      .slider {
+        background-color: transparent;
+        -webkit-appearance: none;
+      }
+
+
+      .slider-vertical {
+        margin: 0 0 0 20px;
+      }
+
+      .slider-rotate {
+        margin: 0 20px 0 0;
+      }
+
+      .slider-horizontal {
+        margin: 20px 0 0 0;
+        width: 100%;
+      }
+
+      .slider-rotate,
+      .slider-vertical {
+        height: 100%;
+        writing-mode: vertical-lr;
+        width: 32px;
+      }
+
+      .slider:focus {
+        outline: none;
+      }
+
+      .slider::-webkit-slider-runnable-track {
+        background: #eeeeee;
+        border: 1px solid black;
+        border-radius: 15px;
+        width: 100%;
+        height: 32px;
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-track {
+        background: #eeeeee;
+        border: 1px solid black;
+        border-radius: 15px;
+        width: 100%;
+        cursor: pointer;
+      }
+
+      .slider.slider-horizontal::-moz-range-track {
+        height: 32px;
+      }
+
+      .slider.slider-rotate::-moz-range-track,
+      .slider.slider-vertical::-moz-range-track {
+        width: 30px;
+      }
+
+      .slider:focus::-webkit-slider-runnable-track {
+        background: #dddddd;
+      }
+
+      .slider.slider-horizontal::-webkit-slider-thumb {
+        background-image: url('assets/arrow-horizontal.png');
+      }
+
+      .slider.slider-rotate::-webkit-slider-thumb {
+        background-image: url('assets/arrow-rotate.png');
+      }
+
+      .slider.slider-vertical::-webkit-slider-thumb {
+        background-image: url('assets/arrow-vertical.png');
+      }
+
+      .slider::-webkit-slider-thumb {
+        background-size: contain;
+        background-repeat: no-repeat;
+        cursor: pointer;
+        height: 30px;
+        width: 30px;
+        -webkit-appearance: none;
+      }
+
+      .slider::-moz-range-thumb {
+        background-color: transparent;
+        background-size: contain;
+        background-repeat: no-repeat;
+        border: 1px transparent solid;
+        cursor: pointer;
+        height: 30px;
+        width: 30px;
+      }
+
+      .slider.slider-horizontal::-moz-range-thumb {
+        background-image: url('assets/arrow-horizontal.png');
+      }
+
+      .slider.slider-rotate::-moz-range-thumb,
+      .slider.slider-vertical::-moz-range-thumb {
+        background-image: url('assets/arrow-vertical.png');
+      }
+    </style>
+    <script>
+      /**
+       * @typedef {"left"|"right"|"top"|"bottom"|"rotate"} DirectionString
+       * @typedef {(DirectionString|DirectionString[])} Direction
+       * 
+       * @typedef {Object} CoordinatesWithRotate
+       * @property {number} x
+       * @property {number} y
+       * @property {number|undefined} rotate
+       * 
+       * @typedef {Object} Coordinates
+       * @property {number} x
+       * @property {number} y
+       * 
+       * @typedef {Object} Piece
+       * @property {Coordinates} target
+       * @property {CoordinatesWithRotate} initial
+       * @property {Direction} direction
+       * 
+       * @typedef {Object.<string, Piece>} Pieces
+       * 
+       * @typedef {Object} Queue
+       * @property {string[]} queue
+       * 
+       * @typedef {Object} PiecesWQueue
+       * @property {Queue} queue
+       * @property {Pieces} pieces
+       */
+
+      // Constants
+      const POSITION_BUFFER_PX = 5
+      const POSITION_BUFFER_DEG = 10
+      const SLIDER_MAX = 500
+      const INITIAL_X_MIN = 100
+      const INITIAL_X_MAX = 600
+      const INITIAL_Y_MIN = 90
+      const INITIAL_Y_MAX = 440
+
+      /** 
+       * @param {HTMLElement} element
+       * @param {boolean} show
+       */
+      function showElement(element, show) {
+        if (!element) {
+          return
+        }
+
+        if (show) {
+          element.classList.remove("hidden")
+        } else {
+          element.classList.add("hidden")
+        }
+      }
+
+      /** 
+       * @param {HTMLElement} element
+       * @param {number} x
+       * @param {number} y
+       */
+      function positionElement(element, x, y) {
+        if (!element) {
+          return
+        }
+        if (x !== undefined) {
+          element.style.setProperty("left", x + "px")
+        }
+        if (y !== undefined) {
+          element.style.setProperty("top", y + "px")
+        }
+      }
+
+      /** 
+       * @param {HTMLElement} element
+       * @param {number} degrees
+       */
+       function rotateElement(element, degrees) {
+        if (!element) {
+          return
+        }
+        if (degrees !== undefined) {
+          element.style.setProperty("rotate", degrees + "deg")
+        }
+      }
+
+      /** @param {string} id */
+      function showPieceAndTarget(id) {
+        const p = document.getElementById(id)
+        showElement(p, true)
+        const target = document.getElementById(`target_${id}`)
+        showElement(target, true)
+      }
+
+      /**
+       * @param {string|string[]} direction
+       * @return {"left"|"right"|undefined}
+       */
+       function horizontalDirection(direction) {
+        if (Array.isArray(direction)) {
+          if (direction.includes("left")) {
+            return "left"
+          }
+          if (direction.includes("right")) {
+            return "right"
+          }
+
+          return undefined
+        }
+
+        return (direction === "left" || direction === "right") ? direction : undefined
+      }
+
+      /**
+       * @param {string|string[]} direction
+       * @return {"top"|"bottom"|undefined}
+       */
+       function verticalDirection(direction) {
+        if (Array.isArray(direction)) {
+          if (direction.includes("top")) {
+            return "top"
+          }
+          if (direction.includes("bottom")) {
+            return "bottom"
+          }
+
+          return undefined
+        }
+
+        return (direction === "top" || direction === "bottom") ? direction : undefined
+      }
+
+      /**
+       * @param {string|string[]} direction
+       * @return {"rotate"|undefined}
+       */
+       function rotateDirection(direction) {
+        if (Array.isArray(direction)) {
+          if (direction.includes("rotate")) {
+            return "rotate"
+          }
+
+          return undefined
+        }
+
+        return direction === "rotate"  ? direction : undefined
+      }
+
+      /** 
+       * @param {string} pieceId
+       * @param {HTMLElement} slider
+       */
+      function checkPiecePosition(pieceId, slider) {
+        const piece = document.getElementById(pieceId)
+        const config = pieces[pieceId]
+        if (piece && config && slider) {
+          const targetX = config.target.x
+          const targetY = config.target.y
+          const x = parseInt(piece.style.getPropertyValue("left").replace("px", ""))
+          const y = parseInt(piece.style.getPropertyValue("top").replace("px", ""))
+          const xInRange =  x >= targetX - POSITION_BUFFER_PX &&  x <= targetX + POSITION_BUFFER_PX
+          const yInRange =  y >= targetY - POSITION_BUFFER_PX &&  y <= targetY + POSITION_BUFFER_PX
+
+          let rotationInRange = true
+          let rotation = 0
+          const cssRotation = piece.style.getPropertyValue("rotate")
+          if (cssRotation && cssRotation.length) {
+            rotation = parseInt(cssRotation.replace("deg", "")) % 360
+            // Allow pieces to be right side up or upside down
+            const rightSideUpInRange = rotation >= 0 && rotation <= 0 + POSITION_BUFFER_DEG
+            const upsideDownInRange = rotation >= 180 - POSITION_BUFFER_DEG && rotation <= 180 + POSITION_BUFFER_DEG 
+            if (!rightSideUpInRange && !upsideDownInRange) {
+              rotationInRange = false
+            }
+          }
+
+          // Check to see if piece is in the right area
+          if (xInRange && yInRange && rotationInRange) {
+            // "Snap" piece into place
+            positionElement(piece, targetX, targetY)
+            const closestDeg = (rotation <= 90 || rotation > 270) ? 0 : 180
+            rotateElement(piece, closestDeg)
+            // Hide the target piece since it's no longer needed
+            const target = document.getElementById(`target_${pieceId}`)
+            showElement(target, false)
+            // Grab the next piece
+            selectedId = queue.shift()
+            if (selectedId) {
+              setTimeout(() => {
+                // Display it
+                showPieceAndTarget(selectedId)
+                // Configure the next slider
+                configureSliderToPiece(selectedId)
+              }, 250) // TODO: Could probably play with the timing here
+            }
+          }
+        }
+
+        // Queue is empty so all pieces must be in the right place
+        if (!selectedId && queue.length === 0) {
+          const submitButton = document.getElementById("verify")
+          if (submitButton) {
+            submitButton.removeAttribute("disabled")
+          }
+        }
+      }
+
+      /**
+       * @param {Event} e
+       * @param {string} pieceId
+       */
+      function onSliderChange(e, pieceId) {
+        return checkPiecePosition(pieceId, e.target)
+      }
+
+      /**
+       * @param {InputEvent} e
+       * @param {string} pieceId
+       * @param {"horizontal"|"vertical"|"rotate"} change
+       */
+      function onSliderInput(e, pieceId, change) {
+        const piece = document.getElementById(pieceId)
+        const config = pieces[pieceId]
+        if (!piece || !config) {
+          return
+        }
+
+        if (change === "horizontal") {
+          const newX = config.initial.x + e.target.valueAsNumber
+          positionElement(piece, newX, undefined)
+        } else if (change === "vertical") {
+          const newY = config.initial.y + e.target.valueAsNumber
+          positionElement(piece, undefined, newY)
+        } else if (change === "rotate") {
+          const newDegreeRotation = (config.initial.rotate ?? 0) + e.target.valueAsNumber
+          rotateElement(piece, newDegreeRotation)
+        }
+      }
+
+      /** @param {string} pieceId */
+      function configureSliderToPiece(pieceId) {
+        const piece = pieces[pieceId]
+        if (!piece) {
+          return
+        }
+
+        const sliderH = document.getElementById("slider-horizontal")
+        const directionH = horizontalDirection(piece.direction)
+        if (directionH) {
+          showElement(sliderH, true)
+          setSliderByDirection(sliderH, directionH)
+        } else {
+          showElement(sliderH, false)
+        }
+
+        const sliderV = document.getElementById("slider-vertical")
+        const directionV = verticalDirection(piece.direction)
+        if (directionV) {
+          showElement(sliderV, true)
+          setSliderByDirection(sliderV, directionV)
+        } else {
+          showElement(sliderV, false)
+        }
+
+        const sliderR = document.getElementById("slider-rotate")
+        const directionR = rotateDirection(piece.direction)
+        if (directionR) {
+          showElement(sliderR, true)
+          setSliderByDirection(sliderR, directionR)
+        } else {
+          showElement(sliderR, false)
+        }
+      }
+
+      /** 
+       * @param {HTMLElement} slider 
+       * @param {DirectionString} direction 
+       */
+      function setSliderByDirection(slider, direction) {
+        if (!slider || !direction) {
+          return
+        }
+
+        switch(direction) {
+          case "left":
+            return setSlider(slider, -SLIDER_MAX, 0, 0)
+          case "right":
+            return setSlider(slider, 0, SLIDER_MAX, 0)
+          case "top":
+            return setSlider(slider, -SLIDER_MAX, 0, 0)
+          case "bottom":
+            return setSlider(slider, 0, SLIDER_MAX, 0)
+          case "rotate":
+            return setSlider(slider, 0, 360, 0)
+        }
+
+      }
+
+      /** 
+       * @param {HTMLElement} slider
+       * @param {number} min
+       * @param {number} max
+       * @param {number} value
+       */
+      function setSlider(slider, min, max, value) {
+        if (!slider) {
+          return
+        }
+        slider.setAttribute("min", min)
+        slider.setAttribute("max", max)
+        slider.value = value
+      }
+
+      /** 
+       * @param {Piece} piece
+       * @return {CoordinatesWithRotate}
+       */
+      function calculateInitialPosition(piece) {
+        if (!piece) {
+          return
+        }
+        let x = piece.target.x
+        const horizontal = horizontalDirection(piece.direction)
+        switch(horizontal) {
+          case "left":
+            // Start on the right if moving left
+            x = INITIAL_X_MAX
+            break
+          case "right":
+            // Start on the left if moving right
+            x = INITIAL_X_MIN
+            break
+        }
+
+        let y = piece.target.y
+        const vertical = verticalDirection(piece.direction)
+        switch(vertical) {
+          case "top":
+            // Start on the bottom if moving to top
+            y = INITIAL_Y_MAX
+            break
+          case "bottom":
+            // Start on the top if moving to bottom
+            y = INITIAL_Y_MIN
+            break
+        }
+
+        const coord = { x, y }
+
+        if (rotateDirection(piece.direction)) {
+          // For now, just set a random rotation since I removed all initial position spec from the file
+          const randomDegree = 15 * (Math.round(Math.random() * 24))
+          coord.rotate = randomDegree
+        }
+
+        return coord
+      }
+
+      /** 
+       * @param {Pieces} pieces
+       * @return {Pieces}
+       */
+      function withInitialPosition(pieces) {
+        /** @type {Pieces} */
+        const updated = {}
+        for (const id in pieces) {
+          const piece = pieces[id]
+          const initial = calculateInitialPosition(piece)
+          updated[id] = { ...piece, initial }
+        }
+
+        return updated
+      }
+
+      /** 
+       * @param {string} pieceClass
+       * @param {Pieces} piecesById
+       */
+      function positionPiecesWithTargets(pieceClass, piecesById) {
+        const allPieces = document.querySelectorAll(pieceClass)
+        allPieces.forEach(p => {
+          const id = p.getAttribute("id")
+          const isTargetPiece = id.includes("target")
+          const pieceId = isTargetPiece ? id.replace("target_", "") : id
+          if (!pieceId) {
+            return
+          }
+          const position = piecesById[pieceId]
+          if (!position) {
+            return
+          }
+
+          const coord = isTargetPiece ? position.target : position.initial
+          positionElement(p, coord.x, coord.y)
+          if (!isTargetPiece && coord.rotate) {
+            rotateElement(p, coord.rotate)
+          }
+          showElement(p, false)
+        })
+      }
+
+      /** @type {Promise<PiecesWQueue>} */
+      const puzzleRequest = fetch("assets/puzzle_directions.json")
+        .then((resp) => resp.json())
+        .catch((err) => {
+          console.error("Error processing puzzle data", err)
+          return {
+            pieces: {},
+            queue: [],
+          }
+        })
+
+      // State
+      /** @type {Pieces} */
+      let pieces = {}
+      /** @type {Queue} */
+      let queue = []
+      let selectedId = ""
+
+      document.addEventListener("DOMContentLoaded", () => {
+        puzzleRequest.then((config) => {
+          // Set global state
+          pieces = withInitialPosition(config.pieces)
+          queue = config.queue
+          selectedId = queue.shift()
+
+          // Position each piece initially
+          positionPiecesWithTargets(".puzzle-piece", pieces)
+
+          // Show the first piece and its placeholder target
+          showPieceAndTarget(selectedId)
+
+          // Show the relevant slider and configure it to the current piece
+          configureSliderToPiece(selectedId)
+
+          // Attach event listeners to each slider
+          const sliders = document.querySelectorAll(".slider")
+          sliders.forEach((s) => {
+            const direction = s.id.replace("slider-", "")
+            s.addEventListener("input", (e) => onSliderInput(e, selectedId, direction))
+            s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
+          })
+        })
+
+        const verifyButton = document.getElementById("verify")
+        if (verifyButton) {
+          verifyButton.addEventListener("click", () => {
+            window.parent.postMessage({ type: "CaptchaVerified" }, window.origin)
+          })
+        }
+      })
+    </script>
+    <!-- Only for dev -->
+    <!-- <script src="draggable.js" defer></script> -->
+  </head>
+  <body draggable="false">
+    <main class="wrapper">
+
+      <div class="instruction-container">
+        <h1 class="instruction">Slide the piece to finish the puzzle</h1>
+      </div>
+      <div class="puzzle-wrapper">
+        <input id="slider-rotate" class="slider slider-rotate hidden" type="range" value=0 step="5" min="0" max="360" orient="horizontal"/>
+        <figure class="puzzle-pieces">
+          <img id="1" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_1_12p.png" data-draggable="" style="top: 339.429px; left: 468.964px; position: absolute;" draggable="false">
+          <img id="2" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_2_12p.png" data-draggable="" style="top: 230.022px; left: 469.011px; position: absolute;" draggable="false">
+          <img id="3" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_3_12p.png" data-draggable="" style="top: 290.413px; left: 455.074px; position: absolute;" draggable="false">
+          <img id="4" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_4_12p.png" data-draggable="" style="top: 152.107px; left: 445.029px; position: absolute;" draggable="false">
+          <img id="5" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_5_12p.png" data-draggable="" style="top: 183.009px; left: 332.076px; position: absolute;" draggable="false">
+          <img id="6" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_6_12p.png" data-draggable="" style="top: 166px; left: 405.978px; position: absolute;" draggable="false">
+          <img id="7" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_7_12p.png" data-draggable="" style="top: 164.027px; left: 454.933px; position: absolute;" draggable="false">
+          <img id="8" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_8_12p.png" data-draggable="" style="top: 116.46px; left: 469.045px; position: absolute;" draggable="false">
+          <img id="9" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_9_12p.png" data-draggable="" style="top: 166.504px; left: 277.935px; position: absolute;" draggable="false">
+          <img id="10" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_10_12p.png" data-draggable="" style="top: 145.5px; left: 241.531px; position: absolute;" draggable="false">
+          <img id="11" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_11_12p.png" data-draggable="" style="top: 163.388px; left: 235.978px; position: absolute;" draggable="false">
+          <img id="12" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_12_12p.png" data-draggable="" style="top: 403.042px; left: 405.978px; position: absolute;" draggable="false">
+          <img id="13" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_13_12p.png" data-draggable="" style="top: 418.422px; left: 328.004px; position: absolute;" draggable="false">
+          <img id="14" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_14_12p.png" data-draggable="" style="top: 403.451px; left: 301.98px; position: absolute;" draggable="false">
+          <img id="15" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_15_12p.png" data-draggable="" style="top: 340.134px; left: 243.094px; position: absolute;" draggable="false">
+          <img id="16" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_16_12p.png" data-draggable="" style="top: 290.033px; left: 229.078px; position: absolute;" draggable="false">
+          <img id="17" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_17_12p.png" data-draggable="" style="top: 212.578px; left: 228.931px; position: absolute;" draggable="false">
+          <img id="18" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_18_12p.png" data-draggable="" style="top: 353.366px; left: 392.109px; position: absolute;" draggable="false">
+          <img id="19" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_19_12p.png" data-draggable="" style="top: 353.942px; left: 264.123px; position: absolute;" draggable="false">
+          <img id="20" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_20_12p.png" data-draggable="" style="top: 339.429px; left: 341.973px; position: absolute;" draggable="false">
+          <img id="21" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_21_12p.png" data-draggable="" style="top: 226.449px; left: 264.045px; position: absolute;" draggable="false">
+          <img id="22" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_22_12p.png" data-draggable="" style="top: 212px; left: 342.5px; position: absolute;" draggable="false">
+          <img id="23" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_23_12p.png" data-draggable="" style="top: 227.018px; left: 392.002px; position: absolute;" draggable="false">
+          <img id="24" class="puzzle-piece" src="assets/collage/cat-puzzle_24_12p.png" data-draggable="" style="top: 276px; left: 279px; position: absolute;" draggable="false">
+          <img id="25" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_25_12p.png" data-draggable="" style="top: 276.007px; left: 406.504px; position: absolute;" draggable="false">
+          <img id="26" class="puzzle-piece hidden" src="assets/collage/cat-puzzle_26_12p.png" data-draggable="" style="top: 290px; left: 328px; position: absolute;" draggable="false">
+          <!-- Placeholder pieces (BLACK) -->
+          <img id="target_1" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_1_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_2" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_2_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_3" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_3_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_4" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_4_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_5" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_5_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_6" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_6_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_7" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_7_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_8" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_8_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_9" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_9_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_10" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_10_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_11" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_11_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_12" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_12_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_13" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_13_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_14" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_14_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_15" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_15_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_16" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_16_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_17" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_17_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_18" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_18_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_19" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_19_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_20" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_20_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_21" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_21_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_22" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_22_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_23" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_23_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_24" class="puzzle-piece piece-placeholder" src="assets/collage/cat-puzzle_solid_24_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_25" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_25_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+          <img id="target_26" class="puzzle-piece piece-placeholder hidden" src="assets/collage/cat-puzzle_solid_26_12p.png" data-draggable="" style="position: absolute;" draggable="false">
+        </figure>
+        <input id="slider-vertical" class="slider slider-vertical hidden" type="range" value=0 step="5" orient="horizontal"/>
+      </div>
+      <!-- TODO: Add accessible labels to these inputs pls -->
+      <input id="slider-horizontal" class="slider slider-horizontal" type="range" value=0 step="5" />
+      <button id="verify" class="verify-button" disabled>Verify</button>
+    </main>
+  </body>
+</html>
