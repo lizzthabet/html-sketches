@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      dialog::backdrop {
+        background-color: rgba(0,0,0,0.45)
+      }
+
+      dialog[open].instructions {
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.75);
+        border-radius: 5px;
+        height: 675px;
+        margin: auto;
+        padding: 1.5rem;
+        overflow: hidden;
+        width: 775px;
+      }
+
+      iframe.captcha-frame {
+        margin: 0 auto;
+        border: none;
+        height: 100%;
+        width: 100%;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .blur {
+        filter: blur(5px);
+      }
+
+      .cat-news {
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        width: 100vw;
+      }
+    </style>
+    <script>
+       window.addEventListener("message", (e) => {
+        if (e.origin !== window.origin) {
+          return
+        }
+
+        if (!e.data) {
+          return
+        }
+
+        switch (e.data.type) {
+          case "CaptchaVerified":
+            const dialog = document.getElementById("captcha-dialog")
+            if (dialog && dialog.localName === "dialog") {
+              dialog.close()
+            }
+            const blurred = document.querySelectorAll(".blur")
+            blurred.forEach((e) => {
+              e.classList.remove("blur")
+            })
+        }
+      })
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Display dialog as modals, which is needed for backdrops
+        const dialog = document.getElementById("captcha-dialog")
+        if (dialog && dialog.localName === "dialog") {
+          dialog.showModal()
+        }
+      })
+    </script>
+  </head>
+  <body draggable="false">
+    <dialog id="captcha-dialog" class="instructions">
+      <iframe class="captcha-frame" src="slide.html"></iframe>
+    </dialog>
+    <figure class="cat-news blur">
+      <img src="assets/time-out.png" />
+    </figure>
+  </body>
+</html>

@@ -128,9 +128,7 @@
         background-color: white;
         border: 1px solid rgba(0, 0, 0, 0.75);
         border-radius: 5px;
-        height: 675px;
         margin: auto;
-        width: 775px;
         padding: 1.5rem;
         overflow: hidden;
       }
@@ -151,7 +149,29 @@
       const phaseTwoPrompt = "I'm not a robot"
       const phaseThreePrompt = "Verifying..."
 
-      // Event types
+      // TODO: add options for drag puzzle(s)
+      const captchas = {
+        slide: {
+          dialogHeight: 675,
+          dialogWidth: 775,
+          iframeSrc: "slide.html"
+        },
+        text: {
+          dialogHeight: 400,
+          dialogWidth: 550,
+          iframeSrc: "text.html"
+        },
+        select: {
+          dialogHeight: 665,
+          dialogWidth: 600,
+          iframeSrc: "select.html"
+        }
+      }
+
+      const DEFAULT_CAPTCHA = "slide"
+      const CAPTCHA_QUERY_PARAM = "test"
+
+      // Message event types to consume from child windows
       const CAPTCHA_VERIFIED = "CaptchaVerified"
 
       /**
@@ -196,6 +216,32 @@
         }, 750)
       }
 
+      /**
+       * @param {"slide"} captcha
+       */
+      function setupCaptcha(captcha) {
+        const config = captchas[captcha]
+        if (!config) {
+          return
+        }
+
+        const errorMsg = document.getElementById("captcha-error")
+        if (errorMsg) {
+          errorMsg.classList.add("hidden")
+        }
+
+        const dialog = document.getElementById("captcha-dialog")
+        if (dialog) {
+          dialog.style.setProperty("height", config.dialogHeight + "px")
+          dialog.style.setProperty("width", config.dialogWidth + "px")
+        }
+
+        const iframe = document.getElementById("captcha-src")
+        if (iframe) {
+          iframe.setAttribute("src", config.iframeSrc)
+        }
+      }
+
       window.addEventListener("message", (e) => {
         if (e.origin !== window.origin) {
           return
@@ -217,6 +263,12 @@
         // if (dialog) {
         //   dialog.showModal()
         // }
+
+        // TODO: Use query params to set captcha, but for now hardcode
+        const params = new URLSearchParams(window.location.search)
+        const captchaFromQuery = params.get(CAPTCHA_QUERY_PARAM)
+        const captcha = captchaFromQuery ?? DEFAULT_CAPTCHA
+        setupCaptcha(captcha)
 
         // Start the loading sequence
         setTimeout(() => {
@@ -271,7 +323,8 @@
       <p>This site needs to review the security of your connection before proceeding.</p>
     </main>
     <dialog id="captcha-dialog" class="captcha-dialog">
-      <iframe class="captcha-frame" src="slide.html"></iframe>
+      <iframe id="captcha-src" class="captcha-frame"></iframe>
+      <p id="captcha-error" class="captcha-error">There was an error loading verification.</p>
     </dialog>
     <footer class="footer">
       <hr />

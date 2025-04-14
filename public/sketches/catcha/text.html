@@ -43,6 +43,13 @@
       const offsetValue = Math.floor(Math.random() * 25)
 
       document.addEventListener("DOMContentLoaded", () => {
+        const submit = document.getElementById("submit-1")
+        if (submit) {
+          submit.addEventListener("click", () => {
+            window.parent.postMessage({ type: "CaptchaVerified" }, window.origin)
+          })
+        }
+
         const input1 = document.getElementById("input-1")
         if (input1) {
           input1.addEventListener("beforeinput", (e) => {
