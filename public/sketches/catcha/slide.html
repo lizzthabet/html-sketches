@@ -206,6 +206,7 @@
        * @property {Coordinates} target
        * @property {CoordinatesWithRotate} initial
        * @property {Direction} direction
+       * @property {boolean|undefined} drift
        * 
        * @typedef {Object.<string, Piece>} Pieces
        * 
@@ -220,11 +221,27 @@
       // Constants
       const POSITION_BUFFER_PX = 5
       const POSITION_BUFFER_DEG = 10
+      const SLIDER_STEP = 5
       const SLIDER_MAX = 500
       const INITIAL_X_MIN = 100
       const INITIAL_X_MAX = 600
       const INITIAL_Y_MIN = 90
       const INITIAL_Y_MAX = 440
+
+      /** 
+       * @param {HTMLElement} element
+       * @return {Coordinates} position
+       */
+      function getStylePosition(element) {
+        if (!element) {
+          return { x: 0, y: 0 }
+        }
+
+        const x = parseInt(element.style.getPropertyValue("left").replace("px", ""))
+        const y = parseInt(element.style.getPropertyValue("top").replace("px", ""))
+
+        return { x, y }
+      }
 
       /** 
        * @param {HTMLElement} element
@@ -336,16 +353,14 @@
 
       /** 
        * @param {string} pieceId
-       * @param {HTMLElement} slider
        */
-      function checkPiecePosition(pieceId, slider) {
+      function checkPiecePosition(pieceId) {
         const piece = document.getElementById(pieceId)
         const config = pieces[pieceId]
-        if (piece && config && slider) {
+        if (piece && config) {
           const targetX = config.target.x
           const targetY = config.target.y
-          const x = parseInt(piece.style.getPropertyValue("left").replace("px", ""))
-          const y = parseInt(piece.style.getPropertyValue("top").replace("px", ""))
+          const { x, y } = getStylePosition(piece)
           const xInRange =  x >= targetX - POSITION_BUFFER_PX &&  x <= targetX + POSITION_BUFFER_PX
           const yInRange =  y >= targetY - POSITION_BUFFER_PX &&  y <= targetY + POSITION_BUFFER_PX
 
@@ -364,6 +379,8 @@
 
           // Check to see if piece is in the right area
           if (xInRange && yInRange && rotationInRange) {
+            // Stop any drift animations
+            stopDrift()
             // "Snap" piece into place
             positionElement(piece, targetX, targetY)
             const closestDeg = (rotation <= 90 || rotation > 270) ? 0 : 180
@@ -398,7 +415,7 @@
        * @param {string} pieceId
        */
       function onSliderChange(e, pieceId) {
-        return checkPiecePosition(pieceId, e.target)
+        return checkPiecePosition(pieceId)
       }
 
       /**
@@ -425,11 +442,102 @@
         }
       }
 
+      /**
+       * @param {string} pieceId
+       * @param {DirectionString[]} directions
+       */
+      function setDrift(pieceId, directions) {
+        const piece = pieces[pieceId]
+        if (!piece) {
+          return
+        }
+
+        // If the dialog is closed, the element might not be visible,
+        // so only animate when the piece is visible on the screen
+        const element = document.getElementById(pieceId)
+        if (!element || !element.checkVisibility()) {
+          return
+        }
+
+        // TODO: consider toggling the direction when slider is at max
+        const hDirection = horizontalDirection(directions)
+        if (hDirection) {
+          const hSlider = document.getElementById("slider-horizontal")
+          if (hSlider && hSlider.checkVisibility()) {
+            if (hDirection === "left") {
+              hSlider.valueAsNumber = hSlider.valueAsNumber - SLIDER_STEP
+            }
+            if (hDirection === "right") {
+              hSlider.valueAsNumber = hSlider.valueAsNumber + SLIDER_STEP
+            }
+            hSlider.dispatchEvent(new Event("input"))
+            hSlider.dispatchEvent(new Event("change"))
+          }
+        }
+
+        const vDirection = verticalDirection(directions)
+        if (vDirection) {
+          const vSlider = document.getElementById("slider-vertical")
+          if (vSlider && vSlider.checkVisibility()) {
+            if (vDirection === "top") {
+              vSlider.valueAsNumber = vSlider.valueAsNumber - SLIDER_STEP
+            }
+            if (vDirection === "bottom") {
+              vSlider.valueAsNumber = vSlider.valueAsNumber + SLIDER_STEP
+            }
+            vSlider.dispatchEvent(new Event("input"))
+            vSlider.dispatchEvent(new Event("change"))
+          }
+        }
+      }
+
+      /**
+       * @param {string} pieceId
+       * @param {"reset"|undefined} type
+       */
+      function startDrift(pieceId, type) {
+        const piece = pieces[pieceId]
+        if (!piece || !piece.drift) {
+          return
+        }
+
+        if (type === "reset") {
+          const newDirections = []
+          const hDirection = horizontalDirection(piece.direction)
+          if (hDirection) {
+            newDirections.push(hDirection)
+          }
+          const vDirection = verticalDirection(piece.direction)
+          if (vDirection) {
+            newDirections.push(vDirection)
+          }
+          driftDirection = newDirections
+          driftIntervalId = setInterval(() => setDrift(selectedId, driftDirection), 250)
+
+          return
+        }
+
+        driftIntervalId = setInterval(() => setDrift(selectedId, driftDirection), 250)
+      }
+
+      function stopDrift() {
+        if (!driftIntervalId) {
+          return
+        }
+
+        clearInterval(driftIntervalId)
+        driftIntervalId = undefined
+      }
+
       /** @param {string} pieceId */
       function configureSliderToPiece(pieceId) {
         const piece = pieces[pieceId]
         if (!piece) {
           return
+        }
+
+        if (piece.drift) {
+          startDrift(pieceId, "reset")
         }
 
         const sliderH = document.getElementById("slider-horizontal")
@@ -534,7 +642,6 @@
         }
 
         const coord = { x, y }
-
         if (rotateDirection(piece.direction)) {
           // For now, just set a random rotation since I removed all initial position spec from the file
           const randomDegree = 15 * (Math.round(Math.random() * 24))
@@ -604,6 +711,10 @@
       /** @type {Queue} */
       let queue = []
       let selectedId = ""
+      /** @type {number|undefined} */
+      let driftIntervalId
+      /** @type {Direction} */
+      let driftDirection = []
 
       document.addEventListener("DOMContentLoaded", () => {
         puzzleRequest.then((config) => {
@@ -627,6 +738,8 @@
             const direction = s.id.replace("slider-", "")
             s.addEventListener("input", (e) => onSliderInput(e, selectedId, direction))
             s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
+            s.addEventListener("mouseup", () => startDrift(selectedId))
+            s.addEventListener("mousedown", () => stopDrift())
           })
         })
 
@@ -643,7 +756,6 @@
   </head>
   <body draggable="false">
     <main class="wrapper">
-
       <div class="instruction-container">
         <h1 class="instruction">Slide the piece to finish the puzzle</h1>
       </div>
