@@ -15,9 +15,8 @@
 
       .instruction-container {
         color: #5a5a5a;
-        text-align: center;
-        /* TODO: redo spacing layout */
         margin-bottom: 15px;
+        text-align: center;
       }
 
       .instruction {
@@ -47,27 +46,6 @@
         width: 100%;
       }
 
-      .verify-button {
-        background-color: #56ad48;
-        border: none;
-        border-radius: 2px;
-        color: white;
-        cursor: pointer;
-        font-size: 1.125rem;
-        padding: 10px 10px;
-        display: block;
-        /* TODO: redo spacing layout */
-        margin: 35px 0 0 auto;
-        width: 100px;
-      }
-
-      .verify-button:disabled {
-        /* this can be improved lol */
-        background-color: #5a5a5a;
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
       .hidden {
         display: none;
       }
@@ -76,16 +54,13 @@
         z-index: 2;
       }
 
+      .puzzle-piece.current {
+        z-index: 3;
+      }
+
       .piece-placeholder {
         opacity: 0.95;
         z-index: 1;
-      }
-
-      .cat-news {
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-        filter: blur(5px);
       }
 
       .slider {
@@ -187,6 +162,25 @@
       .slider.slider-vertical::-moz-range-thumb {
         background-image: url('assets/arrow-vertical.png');
       }
+
+      .verify-button {
+        background-color: #56ad48;
+        border: none;
+        border-radius: 2px;
+        color: white;
+        cursor: pointer;
+        font-size: 1.125rem;
+        padding: 10px 10px;
+        display: block;
+        margin: 35px 0 0 auto;
+        width: 100px;
+      }
+
+      .verify-button:disabled {
+        background-color: #5a5a5a;
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     </style>
     <script>
       /**
@@ -243,20 +237,29 @@
         return { x, y }
       }
 
-      /** 
+      /**
        * @param {HTMLElement} element
-       * @param {boolean} show
+       * @param {string} className
+       * @param {boolean} addClass
        */
-      function showElement(element, show) {
+      function toggleClass(element, className, addClass) {
         if (!element) {
           return
         }
 
-        if (show) {
-          element.classList.remove("hidden")
+        if (addClass) {
+          element.classList.add(className)
         } else {
-          element.classList.add("hidden")
+          element.classList.remove(className)
         }
+      }
+
+      /**
+       * @param {HTMLElement} element
+       * @param {boolean} show
+       */
+      function showElement(element, show) {
+        toggleClass(element, "hidden", !show)
       }
 
       /** 
@@ -293,6 +296,7 @@
       function showPieceAndTarget(id) {
         const p = document.getElementById(id)
         showElement(p, true)
+        toggleClass(p, "current", true)
         const target = document.getElementById(`target_${id}`)
         showElement(target, true)
       }
@@ -385,6 +389,8 @@
             positionElement(piece, targetX, targetY)
             const closestDeg = (rotation <= 90 || rotation > 270) ? 0 : 180
             rotateElement(piece, closestDeg)
+            // Remove "current" class (used to layer piece above others)
+            toggleClass(piece, "current", false)
             // Hide the target piece since it's no longer needed
             const target = document.getElementById(`target_${pieceId}`)
             showElement(target, false)
