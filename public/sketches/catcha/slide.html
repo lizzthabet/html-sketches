@@ -181,6 +181,25 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      .verify-loading {
+        animation-name: rotating;
+        animation-duration: 3s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+        height: 20px;
+        width: 20px;
+      }
+
+      @keyframes rotating {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
     <script>
       /**
@@ -200,6 +219,7 @@
        * @property {Coordinates} target
        * @property {CoordinatesWithRotate} initial
        * @property {Direction} direction
+       * @property {number|undefined} delay
        * @property {boolean|undefined} drift
        * 
        * @typedef {Object.<string, Piece>} Pieces
@@ -221,6 +241,7 @@
       const INITIAL_X_MAX = 600
       const INITIAL_Y_MIN = 90
       const INITIAL_Y_MAX = 440
+      const SHOW_NEXT_DELAY = 250
 
       /** 
        * @param {HTMLElement} element
@@ -299,6 +320,19 @@
         toggleClass(p, "current", true)
         const target = document.getElementById(`target_${id}`)
         showElement(target, true)
+      }
+
+      /** @param {boolean} show */
+      function showVerifyLoading(show) {
+        const verifyText = document.getElementById("verify-text")
+        const verifyLoading = document.getElementById("verify-loading")
+        if (show) {
+          showElement(verifyText, false)
+          showElement(verifyLoading, true)
+        } else {
+          showElement(verifyText, true)
+          showElement(verifyLoading, false)
+        }
       }
 
       /**
@@ -397,12 +431,21 @@
             // Grab the next piece
             selectedId = queue.shift()
             if (selectedId) {
+              const pieceConfig = pieces[selectedId]
+              const delay = pieceConfig.delay ?? SHOW_NEXT_DELAY
+              // TODO: Consider disabling sliders while loading
+              // Show a loading animation when delay is greater than default
+              if (delay > SHOW_NEXT_DELAY) {
+                showVerifyLoading(true)
+              }
               setTimeout(() => {
-                // Display it
+                // Reset loading state
+                showVerifyLoading(false)
+                // Display pieces
                 showPieceAndTarget(selectedId)
                 // Configure the next slider
                 configureSliderToPiece(selectedId)
-              }, 250) // TODO: Could probably play with the timing here
+              }, delay)
             }
           }
         }
@@ -824,7 +867,10 @@
       </div>
       <!-- TODO: Add accessible labels to these inputs pls -->
       <input id="slider-horizontal" class="slider slider-horizontal" type="range" value=0 step="5" />
-      <button id="verify" class="verify-button" disabled>Verify</button>
+      <button id="verify" class="verify-button" disabled>
+        <span id="verify-text">Verify</span>
+        <img id="verify-loading" class="verify-loading hidden" src="assets/loading-circle-white_medium.svg"/>
+      </button>
     </main>
   </body>
 </html>
