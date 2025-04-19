@@ -744,7 +744,7 @@
       }
 
       /** @type {Promise<PiecesWQueue>} */
-      const puzzleRequest = fetch("assets/puzzle_directions.json")
+      const puzzleRequest = fetch("assets/puzzle_directions_linear.json")
         .then((resp) => resp.json())
         .catch((err) => {
           console.error("Error processing puzzle data", err)
