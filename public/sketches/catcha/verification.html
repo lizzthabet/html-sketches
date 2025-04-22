@@ -264,7 +264,6 @@
         //   dialog.showModal()
         // }
 
-        // TODO: Use query params to set captcha, but for now hardcode
         const params = new URLSearchParams(window.location.search)
         const captchaFromQuery = params.get(CAPTCHA_QUERY_PARAM)
         const captcha = captchaFromQuery ?? DEFAULT_CAPTCHA

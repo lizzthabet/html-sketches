@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>doors to mirrors</title>
+    <style>
+      html {
+        background-color: rgb(16, 16, 67);
+      }
+
+      body {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-evenly;
+        text-align: center;
+      }
+
+      iframe.door-frame {
+        margin-top: max(2rem, calc(50vh - 325px));
+        height: 650px;
+        width: 325px;
+      }
+
+      /* TODO: Make shadows or light beams from the doorway */
+
+      .door-frame + .door-frame {
+        margin-left: 2rem;
+      }
+    </style>
+    <script>
+      // TODO: Need to handle the haunt vs. mirror mouse events separately
+      const MOUSE_MOVE = "MouseMove"
+      const MOUSE_TRACE = "MouseTrace"
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const frameOne = document.getElementById("one")
+        const frameTwo = document.getElementById("two")
+
+        window.addEventListener("message", (e) => {
+          if (e.origin !== window.origin || !e.data) {
+            return
+          }
+
+          switch(e.data.type) {
+            case MOUSE_MOVE:
+              // TODO: Add much better event payload and element validation
+              if (e.source.name === "one" && frameTwo) {
+                frameTwo.contentWindow.postMessage({ type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
+              } else if (e.source.name === "two" && frameOne) {
+                frameOne.contentWindow.postMessage({ type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
+              }
+              break
+          }
+        })
+      })
+
+    </script>
+  </head>
+  <body>
+    <iframe id="one" name="one" class="door-frame" title="door frame to mirror" src="mirror.html"></iframe>
+    <iframe id="two" name="two" class="door-frame" title="door frame to mirror" src="mirror.html"></iframe>
+  </body>
+</html>
