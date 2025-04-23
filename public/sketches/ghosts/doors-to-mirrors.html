@@ -3,6 +3,16 @@
   <head>
     <title>doors to mirrors</title>
     <style>
+      :root {
+        --frame-height: 650px;
+        --frame-width: 325px;
+        --frame-border: 4px; /* this is 2px border x 2 */
+        --body-margin: 8px;
+        --frame-total-width: calc(var(--frame-width) + var(--frame-border));
+        --frame-space-between: calc((100vw - 2 * var(--frame-total-width)) / 3);
+        --frame-min-margin: 2rem;
+      }
+
       html {
         background-color: rgb(16, 16, 67);
       }
@@ -16,9 +26,37 @@
       }
 
       iframe.door-frame {
-        margin-top: max(2rem, calc(50vh - 325px));
-        height: 650px;
-        width: 325px;
+        margin-top: max(var(--frame-min-margin), calc(50vh - var(--frame-height) / 2));
+        height: var(--frame-height);
+        width: var(--frame-width);
+      }
+
+      .shadow {
+        --frame-plus-body: calc(var(--frame-total-width) + var(--body-margin));
+        --min-top-margin: calc(var(--frame-min-margin) + var(--frame-plus-body));
+        background-color: #2929b4;
+        filter: blur(3px);
+        height: 400px;
+        margin: 0;
+        position: absolute;
+        top: max(var(--min-top-margin), calc(50vh + var(--frame-plus-body)));
+        width: var(--frame-width);
+        z-index: -1;
+        /* one potential color combo */
+        /* background-color: yellow; */
+        /* opacity: 0.65; */
+      }
+      
+      .shadow-left {
+        left: var(--frame-space-between);
+        /* translate x is purely hardcoded atm */
+        transform: translateX(-73px) skewX(340deg);
+      }
+
+      .shadow-right {
+        /* genuinely stumped by the 319px, which should be 329px */
+        left: calc(var(--frame-space-between) * 2 + 319px);
+        transform: translateX(73px) skewX(20deg);
       }
 
       /* TODO: Make shadows or light beams from the doorway */
@@ -81,6 +119,8 @@
   </head>
   <body>
     <iframe id="one" name="one" class="door-frame" title="door frame to mirror" src="mirror.html"></iframe>
+    <figure class="shadow shadow-left" role="presentation"></figure>
     <iframe id="two" name="two" class="door-frame" title="door frame to mirror" src="mirror.html"></iframe>
+    <figure class="shadow shadow-right" role="presentation"></figure>
   </body>
 </html>
