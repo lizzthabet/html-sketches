@@ -28,28 +28,51 @@
       }
     </style>
     <script>
-      // TODO: Need to handle the haunt vs. mirror mouse events separately
-      const MOUSE_MOVE = "MouseMove"
       const MOUSE_TRACE = "MouseTrace"
+      const MOUSE_MOVE = "MouseMove"
+      const MOUSE_ENTER = "MouseEnter"
+      const MOUSE_LEAVE = "MouseLeave"
+
+      function sendEvent(receiver, payload) {
+        receiver.contentWindow.postMessage(payload)
+      }
 
       document.addEventListener("DOMContentLoaded", () => {
         const frameOne = document.getElementById("one")
         const frameTwo = document.getElementById("two")
+
+        const sourceToReceiver = {
+          one: frameTwo,
+          two: frameOne,
+        }
 
         window.addEventListener("message", (e) => {
           if (e.origin !== window.origin || !e.data) {
             return
           }
 
+          const receiver = e.source ? sourceToReceiver[e.source.name] : undefined
+          // Don't process events for unnamed sources,
+          // since the sender determines the receiver
+          if (!receiver) {
+            return
+          }
+
+          // Proxy events from one window to the other;
+          // TODO: Add much event payload validation
           switch(e.data.type) {
+            case MOUSE_TRACE:
+              sendEvent(receiver, { type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
+              return
             case MOUSE_MOVE:
-              // TODO: Add much better event payload and element validation
-              if (e.source.name === "one" && frameTwo) {
-                frameTwo.contentWindow.postMessage({ type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
-              } else if (e.source.name === "two" && frameOne) {
-                frameOne.contentWindow.postMessage({ type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
-              }
-              break
+              sendEvent(receiver, { type: MOUSE_MOVE, x: e.data.x, y: e.data.y })
+              return
+            case MOUSE_LEAVE:
+              sendEvent(receiver, { type: MOUSE_LEAVE })
+              return
+            case MOUSE_ENTER:
+              sendEvent(receiver, { type: MOUSE_ENTER })
+              return
           }
         })
       })

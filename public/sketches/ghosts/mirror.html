@@ -11,6 +11,7 @@
         cursor: none;
         font-size: 20px;
         margin: 25px;
+        overflow: hidden;
       }
 
       .wall {
@@ -22,7 +23,6 @@
       .mirror {
         background: linear-gradient(32deg, dimgray 0%, gray 28%, ghostwhite 63%, dimgray 100%);
         border-radius: 75px 75px 0 0;
-        cursor: url('assets/wavy.cur'), default;
         height: 300px;
         margin: 0;
         width: 175px;
@@ -34,19 +34,35 @@
         opacity: 0.2;
         user-select: none;
       }
+
+      .cursor {
+        height: 35px;
+        position: absolute;
+        width: 35px;
+      }
     </style>
     <script>
-      const MOUSE_MOVE = "MouseMove"
       const MOUSE_TRACE = "MouseTrace"
+      const MOUSE_MOVE = "MouseMove"
+      const MOUSE_ENTER = "MouseEnter"
+      const MOUSE_LEAVE = "MouseLeave"
       const DO_NOT_HAUNT = ["mirror"]
+
+      function place(element, x, y) {
+        if (!element) {
+          return
+        }
+
+        element.style.setProperty("top", y + "px")
+        element.style.setProperty("left", x + "px")
+      }
 
       function leaveCursor(x, y) {
         const element = document.createElement("img")
         element.setAttribute("src", "assets/normal.cur")
         element.classList.add("once")
         element.style.setProperty("position", "absolute")
-        element.style.setProperty("top", y - 3 + "px")
-        element.style.setProperty("left", x + 3 + "px")
+        place(element, x + 3, y - 3)
         return element
       }
 
@@ -58,7 +74,7 @@
 
       function toPublish(e) {
         window.parent.postMessage({
-          type: MOUSE_MOVE,
+          type: MOUSE_TRACE,
           x: e.pageX,
           y: e.pageY,
         })
@@ -85,17 +101,16 @@
         }
       }
 
-      function show(reference, show) {
-        const target = document.querySelector(reference)
-        if (!target) {
+      function show(element, show) {
+        if (!element) {
           return
         }
-        const display = target.style.getPropertyValue("display")
+        const display = element.style.getPropertyValue("display")
         if (!show && display !== "none") {
-          target.style.setProperty("display", "none")
+          element.style.setProperty("display", "none")
         }
         if (show && display === "none") {
-          target.style.removeProperty("display")
+          element.style.removeProperty("display")
         }
       }
 
@@ -106,14 +121,33 @@
         // TODO: Try saving the location of each item
         // that shouldn't be haunted and check the mouse
         // coordinates
+        // TODO: Or consider creating a background with the mirror
+        // cut out of it or creating a custom map area that's reactive
         // const DO_NOT_HAUNT_IN = {}
         // DO_NOT_HAUNT.forEach((id) => {})
 
-        // TODO: Add a "mousemove" event listener to the "mirror" element
-        // that sends the cursor position with an event to the parent window
+        const mirror = document.getElementById("mirror")
+        if (mirror) {
+          mirror.addEventListener("mousemove", (e) => {
+            window.parent.postMessage({
+              type: MOUSE_MOVE,
+              x: e.pageX,
+              y: e.pageY,
+            })
+          })
+          mirror.addEventListener("mouseleave", (e) => {
+            window.parent.postMessage({
+              type: MOUSE_LEAVE,
+            })
+          })
+          mirror.addEventListener("mouseenter", (e) => {
+            window.parent.postMessage({
+              type: MOUSE_ENTER,
+            })
+          })
+        }
 
-        // Also add an event for "mouseleave" and "mouseenter"
-        // to manage the cursor's visibility in the other window
+        const warped = document.getElementById("warped")
 
         window.addEventListener("message", (e) => {
           if (e.origin !== window.origin || !e.data) {
@@ -126,10 +160,20 @@
             document.body.appendChild(x)
           }
 
+          if (e.data.type === MOUSE_MOVE) {
+            place(warped, e.data.x, e.data.y)
+          }
+
+          if (e.data.type === MOUSE_ENTER) {
+            show(warped, true)
+          }
+
+          if (e.data.type === MOUSE_LEAVE) {
+            show(warped, false)
+          }
         })
 
         document.addEventListener("mousemove", (e) => {
-          // console.log("mousemove", e.target)
           e.stopPropagation()
           const identifier = e.target.getAttribute("id") ?? ""
           if (DO_NOT_HAUNT.includes(identifier)) {
@@ -143,6 +187,7 @@
   <body>
     <main class="wall">
       <figure id="mirror" class="mirror"></figure>
+      <img id="warped" class="cursor" style="display:none;" src="assets/wavy.cur" />
     </main>
     <!-- if you stay somewhere long enough, you can almost see yourself -->
     <!-- you can see yourself once you stop moving -->
