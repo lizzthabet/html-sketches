@@ -1,4 +1,4 @@
-# nah server (an experiment)
+# trickster server (an experiment)
 
 The theme of this week's HTML exercise is "linking" and "websites as places." Whenever you reference an external resource in an HTML document, like `<img src="./images/a-cat.jpg" />` or `<a href="my-other-page.html">go here</a>`, the browser fires off a request for that resource. On the other end of that request is usually a static web server, whose job it is to check if it has that resource and respond with it.
 
@@ -18,7 +18,13 @@ This server isn't _that_ chaotic. It'll at least give you a resource of the same
 npm install && npm start
 ```
 
-Note: this server requires access to the filesystem to run, because it needs to see what other files are in the directory to randomly choose one to respond with.Most lightweight app hosting and deployment systems like Glitch and Netlify (the two that I use most often) don't allow filesystem access or they store static assets separately from application code. Maybe I'll work around this by hard-coding a list of files and their locations on the server to get a deployed version that works.
+Note: this server requires access to the file system to run, because it needs to see what other files are in the directory to randomly choose one to respond with.
+
+## Make your own unstable website
+
+Most lightweight app hosting and deployment systems like Glitch and Netlify (the two that I use most often) don't allow file system access and/or they store static assets separately from application code.
+
+A variation of this trickster server is available as a [cloneable project on Glitch](https://preview.glitch.com/project/trickster-server) that can be used to build your own unstable website. The Glitch implementation uses a combination of file system access (for html, css, and js files) and Glitch's asset CDN (for images, sound, and other files) to randomly serve or redirect requests for resources.
 
 ## Future explorations
 
