@@ -1,4 +1,25 @@
 /**
+ * draggable.js will make any HTML element draggable if it includes
+ * the custom attribute data-draggable (regardless of value).
+ * 
+ * Behavior can be customized by setting a global variable named
+ * ENVIRONMENT_CONFIG in the importing file.
+ * 
+ * To style draggable elements:
+ * ```css
+[data-draggable] {
+  display: inline-block;
+  user-select: none;
+  margin: 0;
+}
+
+[data-draggable]:hover {
+  cursor: grab;
+}
+ * ```
+ */
+
+/**
  * 
  * @param {MouseEvent} event
  */
@@ -103,6 +124,14 @@ function getCurrentPosition(element) {
   return { top: top + scrollY, left: left + scrollX }
 }
 
+/**
+ * Returns a configuration for draggable settings
+ * that's set in the document loading this script.
+ * @typedef DragConfig
+ * @property {boolean} setInitialPosition Sets the initial position of each element to prevent layout shifts before making them draggable, defaults to false
+ * 
+ * @returns {DragConfig}
+ */
 function getEnvConfig() {
   try {
     return ENVIRONMENT_CONFIG

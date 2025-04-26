@@ -15,6 +15,11 @@
 
       html {
         background-color: rgb(16, 16, 67);
+        /* Consider hiding scroll at large enough media sizes
+         * though this will also need to change shadow offset
+         * because scrollbars won't be present lol
+         */
+        /* overflow: hidden; */
       }
 
       body {
@@ -42,9 +47,6 @@
         top: max(var(--min-top-margin), calc(50vh + var(--frame-plus-body)));
         width: var(--frame-width);
         z-index: -1;
-        /* one potential color combo */
-        /* background-color: yellow; */
-        /* opacity: 0.65; */
       }
       
       .shadow-left {
@@ -58,8 +60,6 @@
         left: calc(var(--frame-space-between) * 2 + 319px);
         transform: translateX(73px) skewX(20deg);
       }
-
-      /* TODO: Make shadows or light beams from the doorway */
 
       .door-frame + .door-frame {
         margin-left: 2rem;
