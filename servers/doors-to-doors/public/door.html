@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>doors to doors</title>
+    <style>
+      html {
+        height: 100%;
+        width: 100%;
+        background-color: midnightblue;
+      }
+      body {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+      main {
+        position: relative;
+        top: 50%;
+        text-align: center;
+      }
+      a, a:visited {
+        color: white;
+        font-size: 1.5rem;
+        text-decoration: none;
+      }
+    </style>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const link = document.querySelector("a")
+        // hack to generate infinitely nesting iframes
+        const now = new Date().getMilliseconds()
+        // TODO: This creates infinitely nested routes since the browser
+        // interprets each link as relative to the previous request;
+        // this is an issue with the assumption I'm making on the server-side.
+        link.setAttribute("href", `public/room.html?key=${now}`)
+      })
+    </script>
+  </head>
+  <body>
+    <main class="main">
+      <a href="public/room.html">open</a>
+    </main>
+  </body>
+</html>

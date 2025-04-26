@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>doors to hallways</title>
+    <style>
+      html {
+        background-color: rgb(16, 16, 67);
+      }
+
+      .door {
+        background-color: indigo;
+        border-width: 3px;
+        height: 500px;
+        width: 250px;
+        z-index: 2;
+      }
+
+      .shadow {
+        background-color: #2929b4;
+        filter: blur(3px);
+        height: 500px;
+        margin: 0;
+        position: absolute;
+        width: 250px;
+        z-index: -1;
+      }
+
+      .shadow-left {
+        /* translate x is purely hardcoded based on door size */
+        transform: translateX(-88px) skewX(340deg);
+      }
+      
+      .shadow-right {
+        /* translate x is purely hardcoded based on door size */
+        transform: translateX(88px) skewX(20deg);
+      }
+
+      .room, .room-center, .room-right, .room-left {
+        box-shadow: 0px 10px 15px 0px rgb(149, 76, 42, 50%);
+        margin: 0;
+      }
+
+      .room {
+        /* background-color: sienna; */
+        background-color: #954c2a;
+        filter: blur(2px) brightness(0.8);
+        z-index: -4;
+      }
+
+      .room-center {
+        /* background-color: #996045; */
+        /* background-color: #954c2a; */
+        background-color: #a55732;
+        z-index: -3;
+      }
+
+      .room-right, .room-left {
+        /* background-color: #8a4727; */
+        background-color: sienna;
+        z-index: -2;
+      }
+
+      /* top left, top right, bottom right, bottom left */
+
+      .room.room-a {
+        height: 600px;
+        width: 1000px;
+      }
+
+      .room-center.room-a, .room-left.room-a, .room-right.room-a {
+        height: 600px;
+        width: 800px;
+      }
+
+      .room-a.room-center {
+        transform: scale(0.5);
+      }
+
+      .room-a.room-left {
+        clip-path: polygon(0 0, 50% 25%, 50% 75%, 0 100%);
+      }
+
+      .room-a.room-right {
+        clip-path: polygon(50% 25%, 100% 0, 100% 100%, 50% 75%);
+      }
+
+      .room.room-b, .room-center.room-b, .room-left.room-b, .room-right.room-b {
+        height: 600px;
+        width: 800px;
+      }
+
+      .room-b.room-center {
+        /* just kinda hardcoded by eyesight */
+        transform: scale(0.33) translateX(400px);
+      }
+
+      .room-b.room-left {
+        clip-path: polygon(0 0, 50% 33%, 50% 66%, 0 100%);
+      }
+
+      .room-b.room-right {
+        clip-path: polygon(83% 33%, 100% 0, 100% 100%, 83% 66%);
+      }
+
+      .room.room-c, .room-center.room-c, .room-left.room-c, .room-right.room-c {
+        height: 800px;
+        width: 1200px;
+      }
+
+      .room-c.room-center {
+        /* use the math of the grid to place */
+        height: calc(800px * 2 / 8);
+        width: calc(1200px * 3 / 10);
+        transform: translateX(calc(1200px * 2 / 10)) translateY(calc(800px * 2 / 8));
+      }
+
+      .room-c.room-left {
+        clip-path: polygon(0 0, 20% 25%, 20% 50%, 0 100%);
+      }
+
+      .room-c.room-right {
+        clip-path: polygon(50% 25%, 100% 0, 100% 100%, 50% 50%);
+      }
+
+      .room.room-d, .room-center.room-d, .room-left.room-d, .room-right.room-d {
+        height: 300px;
+        width: 300px;
+      }
+
+      .room-d.room-center {
+        /* use the math of the grid to place */
+        height: calc(300px * 2/5);
+        width: calc(300px * 2/5);
+        transform: translateX(calc(300px *  2/5)) translateY(calc(300px * 1/5));
+      }
+
+      .room-d.room-left {
+        clip-path: polygon(0 0, 40% 20%, 40% 60%, 0 100%);
+      }
+
+      .room-d.room-right {
+        clip-path: polygon(80% 20%, 100% 0, 100% 100%, 80% 60%);
+      }
+
+      .room.room-e, .room-center.room-e, .room-left.room-e, .room-right.room-e {
+        height: 900px;
+        width: 900px;
+      }
+
+      .room-e.room-center {
+        /* use the math of the grid to place */
+        height: calc(900px * 2/10);
+        width: calc(900px * 1/10);
+        transform: translateX(calc(900px *  2/10)) translateY(calc(900px * 3/10));
+      }
+
+      .room-e.room-left {
+        clip-path: polygon(0 0, 20% 30%, 20% 50%, 0 100%);
+      }
+
+      .room-e.room-right {
+        clip-path: polygon(30% 30%, 100% 0, 100% 100%, 30% 50%);
+      }
+
+      .room.room-f, .room-center.room-f, .room-left.room-f, .room-right.room-f {
+        height: 900px;
+        width: 1500px;
+      }
+
+      .room-f.room-center {
+        /* use the math of the grid to place */
+        height: calc(900px * 1/4);
+        width: calc(1500px * 2/7);
+        transform: translateX(calc(1500px *  2/7)) translateY(calc(900px * 2/4));
+      }
+
+      .room-f.room-left {
+        clip-path: polygon(0 0, 29% 50%, 29% 75%, 0 100%);
+      }
+
+      .room-f.room-right {
+        clip-path: polygon(57% 50%, 100% 0, 100% 100%, 57% 75%);
+      }
+
+      .room.room-g, .room-center.room-g, .room-left.room-g, .room-right.room-g {
+        height: 1100px;
+        width: 800px;
+      }
+
+      .room-g.room-center {
+        /* use the math of the grid to place */
+        height: calc(1100px * 2/9);
+        width: calc(800px * 3/7);
+        transform: translateX(calc(800px * 2/7)) translateY(calc(1100px * 1/9));
+      }
+
+      .room-g.room-left {
+        clip-path: polygon(0 0, 29% 11%, 29% 33%, 0 100%);
+      }
+
+      .room-g.room-right {
+        clip-path: polygon(71% 11%, 100% 0, 100% 100%, 71% 33%);
+      }
+
+      .room.room-h, .room-center.room-h, .room-left.room-h, .room-right.room-h {
+        height: 650px;
+        width: 1000px;
+      }
+
+      .room-h.room-center {
+        /* use the math of the grid to place */
+        height: calc(650px * 2/7);
+        width: calc(1000px * 3/10);
+        transform: translateX(calc(1000px * 5/10)) translateY(calc(650px * 3/7));
+      }
+
+      .room-h.room-left {
+        clip-path: polygon(0 0, 50% 43%, 50% 71%, 0 100%);
+      }
+
+      .room-h.room-right {
+        clip-path: polygon(80% 43%, 100% 0, 100% 100%, 80% 71%);
+      }
+
+    </style>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const doors = document.querySelectorAll(".door")
+        doors.forEach((d) => {
+          const shadow = document.createElement("figure")
+          shadow.classList.add("shadow")
+          if (Math.random() > 0.5) {
+            shadow.classList.add("shadow-left")
+          } else {
+            shadow.classList.add("shadow-right")
+          }
+
+          const doorLeft = parseInt(d.style.getPropertyValue("left").replace("px", ""))
+          const doorTop = parseInt(d.style.getPropertyValue("top").replace("px", ""))
+
+          shadow.style.setProperty("left", doorLeft + 3 + "px")
+          shadow.style.setProperty("top", doorTop + 500 + "px")
+
+          // TODO: append to main or another element, not directly to body
+          document.body.append(shadow)
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <main class="main">
+      <iframe class="door" src="door.html" style="top: 136.969px; left: 449.953px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 534.969px; left: 5348px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 231.969px; left: 1350.98px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 589.969px; left: 1771.97px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 651.938px; left: 5583.98px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 1132.97px; left: 44.9844px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 2738.98px; left: 4199.97px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 2913.98px; left: 3517px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: -140px; left: 3588.97px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 1805.98px; left: 932.969px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 3416.98px; left: 449px; position: absolute;"></iframe>
+      <iframe class="door" src="door.html" style="top: 2339.98px; left: 5270.98px; position: absolute;"></iframe>
+      <!-- <figure class="room" data-draggable></figure>
+      <figure class="room room-center" data-draggable></figure>
+      <figure class="room room-left" data-draggable></figure>
+      <figure class="room room-right" data-draggable></figure> -->
+      <figure class="room room-a" data-draggable="" draggable="false" style="position: absolute; left: 52px; top: 205px;">
+        <figure class="room-center room-a" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-a" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-a" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-b" data-draggable="" draggable="false" style="position: absolute; left: 189px; top: 1764px;">
+        <figure class="room-center room-b" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-b" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-b" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-c" data-draggable="" draggable="false" style="position: absolute; left: 2450px; top: 2202px;">
+        <figure class="room-center room-c" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-c" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-c" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-d" data-draggable="" draggable="false" style="position: absolute; left: 1969px; top: 330.5px;">
+        <figure class="room-center room-d" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-d" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-d" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-e" data-draggable="" draggable="false" style="position: absolute; left: 1102px; top: 3574.5px;">
+        <figure class="room-center room-e" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-e" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-e" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-f" data-draggable="" draggable="false" style="position: absolute; left: 4233.5px; top: 266.5px;">
+        <figure class="room-center room-f" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-f" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-f" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-g" data-draggable="" draggable="false" style="position: absolute; left: 5186.11px; top: 2091.3px;">
+        <figure class="room-center room-g" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-g" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-g" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+      <figure class="room room-h" data-draggable="" draggable="false" style="position: absolute; left: 5033.81px; top: 3238.88px;">
+        <figure class="room-center room-h" draggable="false" style="position: absolute;"></figure>
+        <figure class="room-left room-h" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
+        <figure class="room-right room-h" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
+      </figure>
+    </main>
+    <script src="public/_draggable.js" defer></script>
+  </body>
+</html>
