@@ -37,6 +37,31 @@
         transform: translateX(88px) skewX(20deg);
       }
 
+      .room {
+        /* animation-name: parallax-xy;
+        animation-timing-function: ease-in-out;
+        animation-timeline: view(block 90% 10%);
+        animation-fill-mode: both; */
+      }
+
+      @keyframes parallax-x {
+        to {
+          transform: translateX(200px);
+        }
+      }
+
+      @keyframes parallax-y {
+        to {
+          transform: translateY(200px);
+        }
+      }
+
+      @keyframes parallax-xy {
+        to {
+          transform: translate(-200px, 200px);
+        }
+      }
+
       .room, .room-center, .room-right, .room-left {
         box-shadow: 0px 10px 15px 0px rgb(149, 76, 42, 50%);
         margin: 0;
@@ -226,6 +251,34 @@
 
     </style>
     <script>
+      /** @param {Element} element */
+      function translateOnScroll(element) {
+        /** @param {ScrollEvent} _event */
+        return (_event) => {
+          const { scrollX, scrollY, innerHeight, innerWidth } = window
+          const { top, left, width, height } = element.getBoundingClientRect()
+
+          // Calculate the center points for each element
+          const windowCenterX = (scrollX + innerWidth) / 2
+          const windowCenterY = (scrollY + innerHeight) / 2
+          // will need to double-check this
+          const elementCenterX = left + width / 2
+          const elementCenterY = top + height / 2
+
+          // Then figure out the percentage offset the element is from the center
+          // TODO: parameritize the constants
+          const offsetX = elementCenterX - windowCenterX
+          const translateX = (offsetX / innerWidth) * 200 // just a fake number
+          const offsetY = elementCenterY - windowCenterY
+          const translateY = (offsetY / innerHeight) * 200 // just a fake number
+
+          requestAnimationFrame(() => {
+            element.style.setProperty("transform", `translate(${translateX}px,${translateY}px)`)
+          })
+        }
+
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         const doors = document.querySelectorAll(".door")
         doors.forEach((d) => {
@@ -246,6 +299,34 @@
           // TODO: append to main or another element, not directly to body
           document.body.append(shadow)
         })
+
+        const rooms = document.querySelectorAll("figure.room")
+        const scrollListeners = {}
+        const intersect = new IntersectionObserver((entries) => {
+          // This only emits for the items that have changed! So I should store listeners differently
+          entries.forEach((e, i) => {
+            const { target, isIntersecting } = e
+            // This assumes that each element has a unique class list (which is true for now)
+            const targetHash = target.classList.toString()
+            const existingListener = scrollListeners[targetHash]
+            if (isIntersecting && !existingListener) {
+              // Add event listener for scroll when element is in viewport
+              const onScroll = translateOnScroll(target)
+              document.addEventListener("scroll", onScroll)
+              scrollListeners[targetHash] = onScroll
+            } else if (!isIntersecting && existingListener) {
+              // Remove event listener when element is no longer in viewport
+              document.removeEventListener("scroll", existingListener)
+              delete scrollListeners[targetHash]
+            }
+          })
+        })
+
+        rooms.forEach((element) => intersect.observe(element))
+
+        // TODO: Any element that is in the viewport (like on first load or page refresh)
+        // will experience a jump when the first scroll happens, because the translate isn't
+        // applied to the initial position
       })
     </script>
   </head>
@@ -308,6 +389,7 @@
         <figure class="room-right room-h" draggable="false" style="position: absolute; right: 0; top: 0;"></figure>
       </figure>
     </main>
+    <!-- TODO: remove pls & ty -->
     <script src="public/_draggable.js" defer></script>
   </body>
 </html>
