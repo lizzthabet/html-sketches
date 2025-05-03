@@ -32,16 +32,13 @@
         const link = document.querySelector("a")
         // hack to generate infinitely nesting iframes
         const now = new Date().getMilliseconds()
-        // TODO: This creates infinitely nested routes since the browser
-        // interprets each link as relative to the previous request;
-        // this is an issue with the assumption I'm making on the server-side.
-        link.setAttribute("href", `public/room.html?key=${now}`)
+        link.setAttribute("href", `room.html?key=${now}`)
       })
     </script>
   </head>
   <body>
     <main class="main">
-      <a href="public/room.html">open</a>
+      <a href="room.html">open</a>
     </main>
   </body>
 </html>
