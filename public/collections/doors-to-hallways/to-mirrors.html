@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>doors to mirrors</title>
+    <style>
+      :root {
+        --frame-height: 650px;
+        --frame-width: 325px;
+        --frame-border: 4px; /* this is 2px border x 2 */
+        --body-margin: 8px;
+        --frame-total-width: calc(var(--frame-width) + var(--frame-border));
+        --frame-space-between: calc((100vw - 2 * var(--frame-total-width)) / 3);
+        --frame-min-margin: 2rem;
+      }
+
+      html {
+        background-color: rgb(16, 16, 67);
+      }
+
+      body {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-evenly;
+        text-align: center;
+      }
+
+      iframe.door-frame {
+        margin-top: max(var(--frame-min-margin), calc(50vh - var(--frame-height) / 2));
+        height: var(--frame-height);
+        width: var(--frame-width);
+      }
+
+      .shadow {
+        --frame-plus-body: calc(var(--frame-total-width) + var(--body-margin));
+        --min-top-margin: calc(var(--frame-min-margin) + var(--frame-plus-body));
+        background-color: #2929b4;
+        filter: blur(3px);
+        height: 400px;
+        margin: 0;
+        position: absolute;
+        top: max(var(--min-top-margin), calc(50vh + var(--frame-plus-body)));
+        width: var(--frame-width);
+        z-index: -1;
+      }
+      
+      .shadow-left {
+        left: var(--frame-space-between);
+        /* translate x is purely hardcoded atm */
+        transform: translateX(-73px) skewX(340deg);
+      }
+
+      .shadow-right {
+        /* genuinely stumped by the 319px, which should be 329px */
+        left: calc(var(--frame-space-between) * 2 + 319px);
+        transform: translateX(73px) skewX(20deg);
+      }
+
+      .door-frame + .door-frame {
+        margin-left: 2rem;
+      }
+    </style>
+    <script>
+      const MOUSE_TRACE = "MouseTrace"
+      const MOUSE_MOVE = "MouseMove"
+      const MOUSE_ENTER = "MouseEnter"
+      const MOUSE_LEAVE = "MouseLeave"
+
+      function sendEvent(receiver, payload) {
+        receiver.contentWindow.postMessage(payload)
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const frameOne = document.getElementById("one")
+        const frameTwo = document.getElementById("two")
+
+        const sourceToReceiver = {
+          one: frameTwo,
+          two: frameOne,
+        }
+
+        window.addEventListener("message", (e) => {
+          if (e.origin !== window.origin || !e.data) {
+            return
+          }
+
+          const receiver = e.source ? sourceToReceiver[e.source.name] : undefined
+          // Don't process events for unnamed sources,
+          // since the sender determines the receiver
+          if (!receiver) {
+            return
+          }
+
+          // Proxy events from one window to the other;
+          // TODO: Add some event payload validation
+          switch(e.data.type) {
+            case MOUSE_TRACE:
+              sendEvent(receiver, { type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
+              return
+            case MOUSE_MOVE:
+              sendEvent(receiver, { type: MOUSE_MOVE, x: e.data.x, y: e.data.y })
+              return
+            case MOUSE_LEAVE:
+              sendEvent(receiver, { type: MOUSE_LEAVE })
+              return
+            case MOUSE_ENTER:
+              sendEvent(receiver, { type: MOUSE_ENTER })
+              return
+          }
+        })
+      })
+
+    </script>
+  </head>
+  <body>
+    <iframe id="one" name="one" class="door-frame" title="door frame to mirror" src="doorways/mirror.html"></iframe>
+    <figure class="shadow shadow-left" role="presentation"></figure>
+    <iframe id="two" name="two" class="door-frame" title="door frame to mirror" src="doorways/mirror.html"></iframe>
+    <figure class="shadow shadow-right" role="presentation"></figure>
+  </body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mirror</title>
+    <style>
+      html {
+        background-color: midnightblue;
+        color: ghostwhite;
+        cursor: none;
+        font-size: 20px;
+        margin: 25px;
+        overflow: hidden;
+      }
+
+      .wall {
+        margin-top: 45%;
+        display: flex;
+        justify-content: center;
+      }
+
+      .mirror {
+        background: linear-gradient(32deg, dimgray 0%, gray 28%, ghostwhite 63%, dimgray 100%);
+        border-radius: 75px 75px 0 0;
+        height: 300px;
+        margin: 0;
+        width: 175px;
+      }
+
+      .once {
+        height: 35px;
+        width: 35px;
+        opacity: 0.2;
+        user-select: none;
+      }
+
+      .cursor {
+        height: 35px;
+        position: absolute;
+        width: 35px;
+      }
+    </style>
+    <script>
+      const MOUSE_TRACE = "MouseTrace"
+      const MOUSE_MOVE = "MouseMove"
+      const MOUSE_ENTER = "MouseEnter"
+      const MOUSE_LEAVE = "MouseLeave"
+      const DO_NOT_HAUNT = ["mirror"]
+
+      function place(element, x, y) {
+        if (!element) {
+          return
+        }
+
+        element.style.setProperty("top", y + "px")
+        element.style.setProperty("left", x + "px")
+      }
+
+      function leaveCursor(x, y) {
+        const element = document.createElement("img")
+        element.setAttribute("src", "../assets/normal.cur")
+        element.classList.add("once")
+        element.style.setProperty("position", "absolute")
+        place(element, x + 3, y - 3)
+        return element
+      }
+
+      function toMark(e) {
+        const { pageX, pageY } = e
+        const x = leaveCursor(pageX, pageY)
+        document.body.appendChild(x)
+      }
+
+      function toPublish(e) {
+        window.parent.postMessage({
+          type: MOUSE_TRACE,
+          x: e.pageX,
+          y: e.pageY,
+        })
+      }
+
+      function waitByVolume(action, volume) {
+        let count = 0
+        return (toActOn) => {
+          count++
+          if (count === volume) {
+            count = 0
+            action(toActOn)
+          }
+        }
+      }
+
+      function waitByTime(action, time) {
+        let ignore = null
+        return (toActOn) => {
+          if (ignore) {
+            clearTimeout(ignore)
+          }
+          ignore = setTimeout(() => action(toActOn), time)
+        }
+      }
+
+      function show(element, show) {
+        if (!element) {
+          return
+        }
+        const display = element.style.getPropertyValue("display")
+        if (!show && display !== "none") {
+          element.style.setProperty("display", "none")
+        }
+        if (show && display === "none") {
+          element.style.removeProperty("display")
+        }
+      }
+
+      const hauntOverThere = waitByTime(toPublish, 100)
+      const haunted = waitByTime(toMark, 100)
+      const haunting = waitByVolume(toMark, 60)
+      document.addEventListener("DOMContentLoaded", () => {
+        const mirror = document.getElementById("mirror")
+        if (mirror) {
+          mirror.addEventListener("mousemove", (e) => {
+            window.parent.postMessage({
+              type: MOUSE_MOVE,
+              x: e.pageX,
+              y: e.pageY,
+            })
+          })
+          mirror.addEventListener("mouseleave", (e) => {
+            window.parent.postMessage({
+              type: MOUSE_LEAVE,
+            })
+          })
+          mirror.addEventListener("mouseenter", (e) => {
+            window.parent.postMessage({
+              type: MOUSE_ENTER,
+            })
+          })
+        }
+
+        const warped = document.getElementById("warped")
+
+        window.addEventListener("message", (e) => {
+          if (e.origin !== window.origin || !e.data) {
+            return
+          }
+
+          // TODO: Add more event payload validation
+          if (e.data.type === MOUSE_TRACE) {
+            const x = leaveCursor(e.data.x, e.data.y)
+            document.body.appendChild(x)
+          }
+
+          if (e.data.type === MOUSE_MOVE) {
+            place(warped, e.data.x, e.data.y)
+          }
+
+          if (e.data.type === MOUSE_ENTER) {
+            show(warped, true)
+          }
+
+          if (e.data.type === MOUSE_LEAVE) {
+            show(warped, false)
+          }
+        })
+
+        document.addEventListener("mousemove", (e) => {
+          e.stopPropagation()
+          const identifier = e.target.getAttribute("id") ?? ""
+          if (DO_NOT_HAUNT.includes(identifier)) {
+            return
+          }
+          hauntOverThere(e)
+        })
+      })
+    </script>
+  </head>
+  <body>
+    <main class="wall">
+      <figure id="mirror" class="mirror"></figure>
+      <img id="warped" class="cursor" style="display:none;" src="../assets/wavy.cur" />
+    </main>
+    <!-- if you stay somewhere long enough, you can almost see yourself -->
+    <!-- you can see yourself once you stop moving -->
+    <!-- some mouse dandriff you create -->
+    <!-- it's disorienting not to point -->
+  </body>
+</html>

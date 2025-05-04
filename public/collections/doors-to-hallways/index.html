@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .main {
+        border: solid 1px black;
+        border-radius: 5px;
+        max-width: 900px;
+        padding: 2rem;
+        width: fit-content;
+        margin: 2rem auto;
+      }
+
+      .footer {
+        /* TODO: fix on small screen sizes */
+        bottom: 0;
+        color: rgb(48, 48, 48);
+        font-size: 0.75rem;
+        position: absolute;
+        text-align: center;
+        width: calc(100% - 16px);
+      }
+
+      .plain-link {
+        color: unset;
+        text-decoration: unset;
+        font-weight: 600;
+      }
+
+      .title {
+        font-size: 1.25rem;
+        font-weight: normal;
+        margin-bottom: 40px;
+      }
+
+      .verify-instruction {
+        margin-top: 35px;
+      }
+
+      .verify-label:not([disabled]) {
+        cursor: pointer;
+      }
+
+      .verify-label {
+        align-items: center;
+        background-color: buttonface;
+        border: 1px solid black;
+        border-radius: 5px;
+        display: flex;
+        margin-bottom: 30px;
+        padding: 20px;
+        width: 80%;
+      }
+
+      .verify-check, .verify-loading {
+        height: 40px;
+        width: 40px;
+        display: inline-block;
+        margin: 0;
+      }
+
+      .verify-loading {
+        background-image: url("assets/loading-circle.svg");
+        background-size: 40px 40px;
+        background-repeat: no-repeat;
+        animation-name: rotating;
+        animation-duration: 3s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+      }
+
+      @keyframes rotating {
+        from {
+          transform: rotate(0deg);
+        }
+
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .verify-check {
+        background-color: white;
+        border: 3px solid #4b4b4b;
+        border-radius: 5px;
+      }
+
+      .verify-text {
+        color: black;
+        font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-size: 1rem;
+        margin-left: 20px;
+      }
+
+      /* TODO: rename these classes so they're clearer */
+      .instructions {
+        border: solid 3px #4b4b4b;
+        border-radius: 5px;
+        max-width: 900px;
+        width: fit-content;
+        margin: auto;
+      }
+
+      .instruction-container {
+        background-color: #217783;
+        color: white;
+        padding: 1.5rem;
+      }
+
+      .instruction {
+        font-size: 1.125rem;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      dialog::backdrop {
+        background-color: rgba(0,0,0,0.45)
+      }
+
+      dialog[open].captcha-dialog  {
+        background-color: white;
+        border: 1px solid rgba(0, 0, 0, 0.75);
+        border-radius: 5px;
+        margin: auto;
+        padding: 1.5rem;
+        overflow: hidden;
+      }
+
+      iframe.captcha-frame {
+        margin: 0 auto;
+        border: none;
+        height: 100%;
+        width: 100%;
+      }
+
+    </style>
+    <script>
+      const phaseTwoAnnouncement = "Verify that you are human by completing the action below."
+      const phaseThreeAnnouncement = "Verifying that you are human. This may take a few seconds."
+      const phaseTwoBoxClass = "verify-check"
+      const phaseThreeBoxClass = "verify-loading"
+      const phaseTwoPrompt = "I'm not a robot"
+      const phaseThreePrompt = "Verifying..."
+
+      const captchas = {
+        slide: {
+          dialogHeight: 675,
+          dialogWidth: 775,
+          iframeSrc: "doorways/slide.html"
+        },
+
+      }
+
+      // Message event types to consume from child windows
+      const CAPTCHA_VERIFIED = "CaptchaVerified"
+
+      /**
+       * @param {string} next
+       */
+      function complete(next) {
+        const dialog = document.getElementById("captcha-dialog")
+        if (dialog) {
+          dialog.close()
+        }
+
+        // Check the verified box
+        const verifyBox = document.getElementById("verify-input")
+        if (verifyBox) {
+          verifyBox.checked = true
+        }
+
+        // Start the "verifying" animation 
+        setTimeout(() => {
+          const announcement = document.getElementById("announcement")
+          if (announcement) {
+            announcement.innerText = phaseThreeAnnouncement
+          }
+          const verifyText = document.getElementById("verify-text")
+          if (verifyText) {
+            verifyText.innerText = phaseThreePrompt
+          }
+          const verifyLabel = document.getElementById("verify-button")
+          if (verifyLabel) {
+            verifyLabel.disabled = true
+          }
+          const verifyLoading = document.getElementById("verify-loading")
+          if (verifyBox && verifyLoading) {
+            verifyBox.classList.add("hidden")
+            verifyLoading.classList.remove("hidden")
+          }
+
+          // Navigate to somewhere else
+          setTimeout(() => {
+            window.open(next, "_self")
+          }, 4500)
+        }, 750)
+      }
+
+      window.addEventListener("message", (e) => {
+        if (e.origin !== window.origin) {
+          return
+        }
+
+        if (!e.data) {
+          return
+        }
+
+        switch (e.data.type) {
+          case CAPTCHA_VERIFIED:
+            return complete("error.html")
+        }
+      })
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Just for active dialog development
+        // const dialog = document.getElementById("captcha-dialog")
+        // if (dialog) {
+        //   dialog.showModal()
+        // }
+
+        // Start the loading sequence
+        setTimeout(() => {
+          const announcement = document.getElementById("announcement")
+          if (announcement) {
+            announcement.innerText = phaseTwoAnnouncement
+          }
+          const verifyText = document.getElementById("verify-text")
+          if (verifyText) {
+            verifyText.innerText = phaseTwoPrompt
+          }
+          const verifyBox = document.getElementById("verify-input")
+          const verifyLoading = document.getElementById("verify-loading")
+          if (verifyBox && verifyLoading) {
+            verifyBox.classList.remove("hidden")
+            verifyLoading.classList.add("hidden")
+          }
+          const verifyLabel = document.getElementById("verify-button")
+          if (verifyLabel) {
+            verifyLabel.removeAttribute("disabled")
+          }
+        }, 3000)
+
+        // Open the captcha modal when "I'm not a robot" box is clicked
+        const verifyBox = document.getElementById("verify-button")
+        if (verifyBox) {
+          verifyBox.addEventListener("click", (_e) => {
+            const dialog = document.getElementById("captcha-dialog")
+            if (dialog) {
+              dialog.showModal()
+            }
+          })
+        }
+
+        // The check can only be checked after successful completion of the captcha
+        const verifyCheck = document.getElementById("verify-input")
+        if (verifyCheck) {
+          verifyCheck.addEventListener("click", (e) => e.preventDefault())
+        }
+      })
+    </script>
+  </head>
+  <body>
+    <main class="main">
+      <h1>sketches.lizz.website</h1>
+      <h2 id="announcement" class="title">Verifying you are human. This may take a few seconds.</h1>
+      <label id="verify-button" class="verify-label" disabled>
+        <span id="verify-loading" role="presentation" class="verify-loading"></span>
+        <input id="verify-input" class="verify-check hidden" type="checkbox" />
+        <span id="verify-text" class="verify-text">Verifying...</span>
+      </label>
+      <p>This site needs to review the security of your connection before proceeding.</p>
+    </main>
+    <dialog id="captcha-dialog" class="captcha-dialog" style="height: 675px; width: 775px;">
+      <!-- TODO: fix link routing -->
+      <iframe id="captcha-src" class="captcha-frame" src="doorways/slide.html"></iframe>
+    </dialog>
+    <footer class="footer">
+      <hr />
+      <p>Ray ID: <code>9139c6cc39dae17c</code></p>
+      <p>Performance & security by <a href="https://lizz.website" target="_blank" class="plain-link">Croudflare</a></p>
+    </footer>
+  </body>
+</html>
