@@ -10,7 +10,7 @@
       }
 
       .door {
-        background-color: indigo;
+        background-color: rgb(16, 16, 67);
         border-width: 3px;
         height: 500px;
         width: 250px;
@@ -35,25 +35,6 @@
       .shadow-right {
         /* translate x is purely hardcoded based on door size */
         transform: translateX(88px) skewX(20deg);
-      }
-
-      .room {
-        /* animation-name: parallax-xy;
-        animation-timing-function: ease-in-out;
-        animation-timeline: view(block 90% 10%);
-        animation-fill-mode: both; */
-      }
-
-      @keyframes parallax-x {
-        to {
-          transform: translateX(200px);
-        }
-      }
-
-      @keyframes parallax-y {
-        to {
-          transform: translateY(200px);
-        }
       }
 
       @keyframes parallax-xy {
@@ -344,10 +325,6 @@
       <iframe class="door" src="door.html" style="top: 1805.98px; left: 932.969px; position: absolute;"></iframe>
       <iframe class="door" src="door.html" style="top: 3416.98px; left: 449px; position: absolute;"></iframe>
       <iframe class="door" src="door.html" style="top: 2339.98px; left: 5270.98px; position: absolute;"></iframe>
-      <!-- <figure class="room" data-draggable></figure>
-      <figure class="room room-center" data-draggable></figure>
-      <figure class="room room-left" data-draggable></figure>
-      <figure class="room room-right" data-draggable></figure> -->
       <figure class="room room-a" data-draggable="" draggable="false" style="position: absolute; left: 52px; top: 205px;">
         <figure class="room-center room-a" draggable="false" style="position: absolute;"></figure>
         <figure class="room-left room-a" draggable="false" style="position: absolute; left: 0; top: 0;"></figure>
