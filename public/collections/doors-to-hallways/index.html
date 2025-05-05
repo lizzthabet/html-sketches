@@ -99,7 +99,6 @@
         margin-left: 20px;
       }
 
-      /* TODO: rename these classes so they're clearer */
       .instructions {
         border: solid 3px #4b4b4b;
         border-radius: 5px;
@@ -123,7 +122,7 @@
       }
 
       dialog::backdrop {
-        background-color: rgba(0,0,0,0.45)
+        background-color: rgba(0, 0, 0, 0.45);
       }
 
       dialog[open].captcha-dialog  {
@@ -150,15 +149,6 @@
       const phaseThreeBoxClass = "verify-loading"
       const phaseTwoPrompt = "I'm not a robot"
       const phaseThreePrompt = "Verifying..."
-
-      const captchas = {
-        slide: {
-          dialogHeight: 675,
-          dialogWidth: 775,
-          iframeSrc: "doorways/slide.html"
-        },
-
-      }
 
       // Message event types to consume from child windows
       const CAPTCHA_VERIFIED = "CaptchaVerified"
@@ -280,13 +270,14 @@
       <p>This site needs to review the security of your connection before proceeding.</p>
     </main>
     <dialog id="captcha-dialog" class="captcha-dialog" style="height: 675px; width: 775px;">
-      <!-- TODO: fix link routing -->
       <iframe id="captcha-src" class="captcha-frame" src="doorways/slide.html"></iframe>
     </dialog>
+    <!-- the last scene of this collection falls asleep when it's not viewed; this helps wake it up early -->
+    <iframe src="https://doors-to-doors.onrender.com" aria-hidden="true" style="display: hidden; position: absolute; top: -100vh; left: -100vw;"></iframe>
     <footer class="footer">
       <hr />
       <p>Ray ID: <code>9139c6cc39dae17c</code></p>
-      <p>Performance & security by <a href="https://lizz.website" target="_blank" class="plain-link">Croudflare</a></p>
+      <p>Performance & security by <a href="https://sketches.lizz.website" target="_blank" class="plain-link">Croudflare</a></p>
     </footer>
   </body>
 </html>

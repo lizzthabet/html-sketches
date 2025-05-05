@@ -229,9 +229,6 @@
        * @typedef {Object} Queue
        * @property {string[]} queue
        * 
-       * @typedef {Object} PiecesWQueue
-       * @property {Queue} queue
-       * @property {Pieces} pieces
        */
 
       // Constants
@@ -244,6 +241,121 @@
       const INITIAL_Y_MIN = 90
       const INITIAL_Y_MAX = 440
       const SHOW_NEXT_DELAY = 250
+      const PUZZLE_CONFIG = {
+        "24": {
+          "target": { "x":279, "y":276 },
+          "direction": "left"
+        },
+        "20": {
+          "target": { "x":342, "y":340 },
+          "direction": "left",
+          "delay": 4000
+        },
+        "3": {
+          "target": { "x":455, "y":290.5 },
+          "direction": "right",
+          "delay": 3000
+        },
+        "21": {
+          "target": { "x":264.5, "y":226 },
+          "direction": "left",
+          "delay": 2000
+        },
+        "16": {
+          "target": { "x":228.5, "y":290 },
+          "direction": "left",
+          "delay": 1000
+        },
+        "23": {
+          "target": { "x":391, "y":226 },
+          "direction": "right"
+        },
+        "6": {
+          "target": { "x":405, "y":165.5 },
+          "direction": "left"
+        },
+        "5": {
+          "target": { "x":331, "y":182.5 },
+          "direction": "right"
+        },
+        "25": {
+          "target": { "x":406, "y":276 },
+          "direction": "right"
+        },
+        "10": {
+          "target": { "x":242, "y":146 },
+          "direction": ["left", "bottom"]
+        },
+        "11": {
+          "target": { "x":236, "y":162.5 },
+          "direction": ["right", "top"]
+        },
+        "17": {
+          "target": { "x":228.5, "y":212 },
+          "direction": ["right", "bottom"]
+        },
+        "9": {
+          "target": { "x":278, "y":166 },
+          "direction": ["left", "bottom"]
+        },
+        "12": {
+          "target": { "x":406, "y":404 },
+          "direction": ["left", "bottom"]
+        },
+        "19": {
+          "target": { "x":266, "y":354 },
+          "direction": ["right", "bottom"]
+        },
+        "14": {
+          "target": { "x":301.5, "y":403 },
+          "direction": ["right", "top"]
+        },
+        "13": {
+          "target": { "x":328.5, "y":418 },
+          "direction": ["left", "top", "rotate"]
+        },
+        "15": {
+          "target": { "x":242, "y":340 },
+          "direction": ["right", "top", "rotate"]
+        },
+        "1": {
+          "target": { "x":469, "y":340 },
+          "direction": ["left", "bottom", "rotate"]
+        },
+        "4": {
+          "target": { "x":445, "y":152 },
+          "direction": ["right", "bottom", "rotate"]
+        },
+        "2": {
+          "target": { "x":469.5, "y":229.5 },
+          "direction": ["left", "bottom", "rotate"]
+        },
+        "8": {
+          "target": { "x":469, "y":116 },
+          "direction": ["right", "bottom"],
+          "drift": true
+        },
+        "7": {
+          "target": { "x":455, "y":163 },
+          "direction": ["left", "top", "rotate"],
+          "drift": true
+        },
+        "22": {
+          "target": { "x":342, "y":212 },
+          "direction": ["right", "top", "rotate"],
+          "drift": true
+        },
+        "18": {
+          "target": { "x":391.5, "y":354 },
+          "direction": ["left", "bottom", "rotate"],
+          "drift": true
+        },
+        "26": {
+          "target": { "x":328, "y":290 },
+          "direction": ["left", "top", "rotate"],
+          "drift": true
+        }
+      }
 
       /** 
        * @param {HTMLElement} element
@@ -745,22 +857,11 @@
         })
       }
 
-      /** @type {Promise<PiecesWQueue>} */
-      const puzzleRequest = fetch("../assets/puzzle_directions_linear.json")
-        .then((resp) => resp.json())
-        .catch((err) => {
-          console.error("Error processing puzzle data", err)
-          return {
-            pieces: {},
-            queue: [],
-          }
-        })
-
       // State
+      /** @type {Queue} */
+      const queue =  ["24", "20", "3", "21", "16", "23", "6", "5", "25", "10", "11", "17", "9", "12", "19", "14", "13", "15", "1", "4", "2", "8", "7", "22", "18", "26"]
       /** @type {Pieces} */
       let pieces = {}
-      /** @type {Queue} */
-      let queue = []
       let selectedId = ""
       /** @type {number|undefined} */
       let driftIntervalId
@@ -768,30 +869,26 @@
       let driftDirection = []
 
       document.addEventListener("DOMContentLoaded", () => {
-        puzzleRequest.then((config) => {
-          // Set global state
-          pieces = withInitialPosition(config.pieces)
-          queue = config.queue
-          selectedId = queue.shift()
+        pieces = withInitialPosition(PUZZLE_CONFIG)
+        selectedId = queue.shift()
 
-          // Position each piece initially
-          positionPiecesWithTargets(".puzzle-piece", pieces)
+        // Position each piece initially
+        positionPiecesWithTargets(".puzzle-piece", pieces)
 
-          // Show the first piece and its placeholder target
-          showPieceAndTarget(selectedId)
+        // Show the first piece and its placeholder target
+        showPieceAndTarget(selectedId)
 
-          // Show the relevant slider and configure it to the current piece
-          configureSliderToPiece(selectedId)
+        // Show the relevant slider and configure it to the current piece
+        configureSliderToPiece(selectedId)
 
-          // Attach event listeners to each slider
-          const sliders = document.querySelectorAll(".slider")
-          sliders.forEach((s) => {
-            const direction = s.id.replace("slider-", "")
-            s.addEventListener("input", (e) => onSliderInput(e, selectedId, direction))
-            s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
-            s.addEventListener("mouseup", () => startDrift(selectedId))
-            s.addEventListener("mousedown", () => stopDrift())
-          })
+        // Attach event listeners to each slider
+        const sliders = document.querySelectorAll(".slider")
+        sliders.forEach((s) => {
+          const direction = s.id.replace("slider-", "")
+          s.addEventListener("input", (e) => onSliderInput(e, selectedId, direction))
+          s.addEventListener("change", (e) => onSliderChange(e, selectedId, direction))
+          s.addEventListener("mouseup", () => startDrift(selectedId))
+          s.addEventListener("mousedown", () => stopDrift())
         })
 
         const verifyButton = document.getElementById("verify")
