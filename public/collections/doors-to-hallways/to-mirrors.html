@@ -13,6 +13,8 @@
         --frame-total-width: calc(var(--frame-width) + var(--frame-border));
         --frame-space-between: calc((100vw - 2 * var(--frame-total-width)) / 3);
         --frame-min-margin: 2rem;
+        --exit-height: 100px;
+        --exit-width: 125px;
       }
 
       html {
@@ -61,15 +63,106 @@
       .door-frame + .door-frame {
         margin-left: 2rem;
       }
+
+      .door-exit {
+        left: 100vw; /* just out of view */
+        padding: 32px;
+        position: absolute;
+        top: 110vh; /* just out of view */
+        height: calc(var(--exit-height) + var(--frame-border));
+        width: calc(var(--exit-width) + var(--frame-border));;
+      }
+      
+      .exit-frame {
+        height: var(--exit-height);
+        width: var(--exit-width);
+      }
+
+      /* TODO: This might need to be scaled for mobile */
+      .verification {
+        border: unset;
+        border-radius: 10px;
+        height: 285px;
+        max-width: unset; /* prevent the dialog from collapsing on small window sizes */
+        overflow: hidden;
+        padding: 0;
+        width: 445px;
+
+        /* position the dialog next to the exit sign */
+        margin: 0;
+        position: absolute;
+        top: max(0px, calc(110vh - (285px / 2)));
+        left: max(0px, calc(100vw - 445px));
+      }
+
+      .verification > iframe {
+        border: unset;
+        height: 100%;
+        margin: 0 auto;
+        width: 100%;
+      }
+
     </style>
     <script>
       const MOUSE_TRACE = "MouseTrace"
       const MOUSE_MOVE = "MouseMove"
       const MOUSE_ENTER = "MouseEnter"
       const MOUSE_LEAVE = "MouseLeave"
+      const EXIT = "DoorExit"
+      const VERIFIED = "CaptchaVerified"
 
-      function sendEvent(receiver, payload) {
+      function verify(event, receivers) {
+        if (!event || event.origin !== window.origin) {
+          return false
+        }
+
+        if (!event.data || !event.data.type) {
+          return false
+        }
+
+        const { data, source } = event
+        const { type } = data
+
+        switch (type) {
+          case MOUSE_LEAVE:
+          case MOUSE_ENTER:
+            const receiver = source ? receivers[source.name] : undefined
+            return !!receiver
+          case MOUSE_TRACE:
+          case MOUSE_MOVE:
+            const receiverFound = source ? receivers[source.name] : undefined
+            const xIsNumber = Number.isFinite(data.x)
+            const yIsNumber = Number.isFinite(data.y)
+            return !!receiverFound && xIsNumber && yIsNumber
+          case EXIT:
+          case VERIFIED:
+            return true
+        }
+
+        return false
+      }
+
+      function send(receiver, payload) {
         receiver.contentWindow.postMessage(payload)
+      }
+
+      function test() {
+        const dialog = document.getElementById("verification")
+        if (dialog) {
+          dialog.showModal()
+        }
+      }
+
+      function exit() {
+        const dialog = document.getElementById("verification")
+        if (dialog) {
+          dialog.close()
+        }
+
+        setTimeout(() => {
+          // TODO: Play around with a transition animation
+          window.location.assign("to-doors")
+        }, 250)
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -82,31 +175,34 @@
         }
 
         window.addEventListener("message", (e) => {
-          if (e.origin !== window.origin || !e.data) {
+          if (!verify(e, sourceToReceiver)) {
             return
           }
 
-          const receiver = e.source ? sourceToReceiver[e.source.name] : undefined
-          // Don't process events for unnamed sources,
-          // since the sender determines the receiver
-          if (!receiver) {
-            return
-          }
-
-          // Proxy events from one window to the other;
-          // TODO: Add some event payload validation
           switch(e.data.type) {
+            // Mouse events are proxied from one window to another
             case MOUSE_TRACE:
-              sendEvent(receiver, { type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
+              const traceReceiver = sourceToReceiver[e.source.name]
+              send(traceReceiver, { type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
               return
             case MOUSE_MOVE:
-              sendEvent(receiver, { type: MOUSE_MOVE, x: e.data.x, y: e.data.y })
+              const moveReceiver = sourceToReceiver[e.source.name]
+              send(moveReceiver, { type: MOUSE_MOVE, x: e.data.x, y: e.data.y })
               return
             case MOUSE_LEAVE:
-              sendEvent(receiver, { type: MOUSE_LEAVE })
+              const leaveReceiver = sourceToReceiver[e.source.name]
+              send(leaveReceiver, { type: MOUSE_LEAVE })
               return
             case MOUSE_ENTER:
-              sendEvent(receiver, { type: MOUSE_ENTER })
+              const enterReceiver = sourceToReceiver[e.source.name]
+              send(enterReceiver, { type: MOUSE_ENTER })
+              return
+            // Verification events are processed from child windows
+            case EXIT:
+              test()
+              return
+            case VERIFIED:
+              exit()
               return
           }
         })
@@ -119,6 +215,12 @@
     <figure class="shadow shadow-left" role="presentation"></figure>
     <iframe id="two" name="two" class="door-frame" title="door frame to mirror" src="doorways/mirror.html"></iframe>
     <figure class="shadow shadow-right" role="presentation"></figure>
+    <section class="door-exit">
+      <iframe id="next" name="exit" class="exit-frame" title="exit" src="doorways/exit.html"></iframe>
+      <dialog id="verification" class="verification">
+        <iframe name="exit-verification" src="doorways/text.html"></iframe>
+      </dialog>
+    </section>
     <!-- the last scene of this collection falls asleep when it's not viewed; this helps wake it up early -->
     <iframe src="https://doors-to-doors.onrender.com" aria-hidden="true" style="display: hidden; position: absolute; top: -100vh; left: -100vw;"></iframe>
   </body>

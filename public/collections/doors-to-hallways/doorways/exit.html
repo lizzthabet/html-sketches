@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>exit</title>
+  <style>
+
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const exit = document.getElementById("exit")
+      if (exit) {
+        exit.addEventListener("click", (e) => {
+          e.preventDefault()
+          window.parent.postMessage({ type: "DoorExit" }, window.origin)
+        })
+      }
+    })
+  </script>
+</head>
+<body>
+  <a id="exit" href="../to-doors.html">exit</a>
+</body>
+</html>

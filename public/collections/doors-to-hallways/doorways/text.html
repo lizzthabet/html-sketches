@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Just a moment...</title>
+    <style>
+      body {
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        margin: 0;
+      }
+
+      .text-verification {
+        max-width: 450px;
+        padding: 2rem;
+        width: fit-content;
+      }
+
+      .prompt {
+        color: brown;
+        font-size: 1.25rem;
+        margin-top: 0;
+      }
+
+      .form {
+        display: flex;
+        justify-items: center;
+        margin-top: 8px;
+      }
+
+      #input {
+        font-size: 1.75rem;
+        margin-right: 5px;
+      }
+
+      #submit {
+        font-size: 1.15rem;
+        padding: 5px;
+      }
+
+    </style>
+    <script>
+      const FORM1_CAPTCHA_VALUE = "H3V22XFW"
+      const letters = "abcdefghijklmnopqrstuvwxyz"
+      const offsetValue = Math.floor(Math.random() * 25)
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const submit = document.getElementById("submit")
+        if (submit) {
+          submit.addEventListener("click", () => {
+            window.parent.postMessage({ type: "CaptchaVerified" }, window.origin)
+          })
+        }
+
+        const input1 = document.getElementById("input")
+        if (input1) {
+          input1.addEventListener("beforeinput", (e) => {
+            const { inputType, data } = e
+            if (inputType === "insertText" && data) {
+              e.stopPropagation()
+              e.preventDefault()
+              const chars = data.toLowerCase().split("")
+              const newChars = chars.map((c, i) => {
+                const letterIdx = letters.indexOf(c)
+                // No matches found, so just return input unchanged
+                if (letterIdx < 0) {
+                  return c
+                }
+                // Map the letter to some other random letter
+                const offsetIdx = (letterIdx + offsetValue) % letters.length
+                const newChar = letters[offsetIdx]
+                const isUppercase = data[i] !== c
+                return isUppercase ? newChar.toUpperCase() : newChar
+              })
+              // console.log("now we cookin", data, "=>", newChars.join(""))
+              const { selectionStart, value } = input1
+              // Note: this does assume that selection is length 1, so
+              // it might be nice to check that and figure out what characters
+              // need to be overridden, if any
+              if (selectionStart < value.length) {
+                // Add the new characters to where the cursor is
+                input1.value = value.slice(0, selectionStart) + newChars.join("") + value.slice(selectionStart)
+                // Set the cursor position to after the new insertion
+                input1.selectionStart = selectionStart + 1
+                input1.selectionEnd = selectionStart + 1
+              } else {
+                input1.value = value + newChars.join("")
+              }
+              // Check input's current value against the answer value
+              const submitButton1 = document.getElementById("submit")
+              if (!submitButton1) {
+                return
+              }
+
+              if (input1.value.toLowerCase() === FORM1_CAPTCHA_VALUE.toLowerCase()) {
+                submitButton1.removeAttribute("disabled")
+              } else {
+                submitButton1.setAttribute("disabled", "")
+              }
+            }
+          })
+
+          // For other "inputType" events that are propagated,
+          // make sure to check the input's value against the answer
+          input1.addEventListener("input", (e) => {
+            const submitButton1 = document.getElementById("submit")
+            if (!submitButton1) {
+              return
+            }
+
+            if (input1.value.toLowerCase() === FORM1_CAPTCHA_VALUE.toLowerCase()) {
+              submitButton1.removeAttribute("disabled")
+            } else {
+              submitButton1.setAttribute("disabled", "")
+            }
+          })
+        }
+      })
+    </script>
+  </head>
+  <body>
+    <section class="text-verification">
+      <h1 class="prompt">To proceed, enter the text below.</h1>
+      <img src="../assets/text.jpg" alt="a picture of black letters 'H3V22XFW' on a white background" />
+      <form class="form">
+        <input id="input" aria-label="enter the text from the picture" type="text" autofocus />
+        <button id="submit" type="submit" disabled>Submit</button>
+      </form>
+    </section>
+  </body>
+</html>
