@@ -5,7 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>exit</title>
   <style>
+    body {
+      background-color: midnightblue;
+      font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+      margin: 0;
+      text-align: center;
+    }
 
+    a {
+      animation: 2s linear infinite alternate-reverse flicker;
+      background: linear-gradient(145deg, #5b5b5b 0%, gray 28%, rgb(139 139 139) 63%, #444444 100%);
+      border-bottom-right-radius: 10px;
+      border-bottom-left-radius: 10px;
+      box-shadow: 4px 4px 0px #444444;
+      color: lime;
+      display: inline-block;
+      font-size: 1.75rem;
+      letter-spacing: 2px;
+      padding: 10px 15px;
+      text-decoration: none;
+      text-transform: uppercase;
+      transform: scaleY(1.25);
+    }
+
+    @keyframes flicker {
+      0% {
+        text-shadow: 0 0 5px lime;
+      }
+
+      30% {
+        text-shadow: 0 0 0 lime;
+      }
+
+      80% {
+        text-shadow: 0 0 3px lime;
+      }
+
+      100% {
+        text-shadow: 0 0 7px lime;
+      }
+    }
   </style>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
