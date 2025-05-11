@@ -7,16 +7,34 @@
     <!-- <link rel="icon" href="" /> -->
     <title>a few experiments in html sketching</title>
     <style>
+      :root {
+        --column-width: 400px;
+        --single-column-breakpoint: calc(var(--column-width) * 2);
+      }
+
       body {
         background-color: #f3f3f3;
         color: #333333;
       }
 
       .main {
-        border: solid 1px #333333;
-        max-width: 900px;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+      }
+
+      .column {
+        max-width: var(--column-width);
         padding: 2rem;
         width: fit-content;
+      }
+
+      .with-side-margin + .with-side-margin {
+        margin-left: 1rem;
+      }
+
+      .with-border {
+        border: solid 1px #333333;
       }
 
       .section {
@@ -34,87 +52,125 @@
       .h3 {
         font-size: 1.17em;
       }
+
+      @media screen and (max-width: 800px) {
+        .main {
+          display: flex;
+          flex-direction: column;
+          flex-wrap: wrap;
+        }
+
+        .with-side-margin + .with-side-margin {
+          margin-left: unset;
+          margin-top: 1rem;
+        }
+      }
     </style>
   </head>
   <body>
     <main class="main">
-      <h1><em>html sketches</em></h1>
-      <p>a sketchbook website full of website sketches ◕‿◕</p>
-      <hr />
-      <section class="section">
-        <h2 class="h3">httpoetics exercises</h2>
-        <p>
-          <ul>
-            <li><a href="sketches/poetics/badugly.html">badugly.html</a></li>
-            <li><a href="sketches/poetics/waytoobig.html">waytoobig.html</a></li>
-            <li><a href="https://github.com/lizzthabet/html-sketches/tree/main/servers/trickster-server">trickster-server/README.md</a></li>
-            <li><a href="sketches/poetics/unbutton.html">unbutton.html</a></li>
-            <li><a href="sketches/poetics/cursorplay.html">cursorplay.html</a></li>
-            <li><a href="sketches/poetics/verificationsounds.html">verificationsounds.html</a></li>
-            <li><a href="sketches/poetics/portals.html">portals.html</a></li>
-          </ul>
-        </p>
-      </section>
-      <hr />
-      <section class="section">
-        <h2 class="h3">folder party sketches</h2>
-        <p>
-          <ul>
-            <li><a href="sketches/folder-party/ascii.html">ascii.html</a></li>
-            <li><a href="sketches/folder-party/desktop.html">desktop.html</a></li>
-            <li><a href="sketches/folder-party/furniture.html">furniture.html</a></li>
-            <li><a href="sketches/folder-party/hand-drawn.html">hand-drawn.html</a></li>
-          </ul>
-        </p>
-      </section>
-      <hr />
-      <section class="section">
-        <h2 class="h3">games sketches</h2>
-        <p>
-          <ul>
-            <li><a href="sketches/gaming/movegrid.html">movegrid.html</a></li>
-            <li><a href="sketches/gaming/oceanvibe.html">oceanvibe.html</a></li>
-            <li><a href="sketches/gaming/websitevibe.html">websitevibe.html</a></li>
-            <li><a href="sketches/gaming/retrovibe.html">retrovibe.html</a></li>
-            <li><a href="sketches/gaming/storylineyarn.html">storylineyarn.html</a></li>
-            <li><a href="sketches/gaming/epilogue.html">epilogue.html</a></li>
-          </ul>
-        </p>
-      </section>
-      <section class="section">
-        <h2 class="h3">skillshare</h2>
-        <p>
-          <ul>
-            <li><a href="sketches/skillshare/islands.html">islands.html</a></li>
-          </ul>
-        </p>
-      </section>
-      <section class="section">
-        <h2 class="h3">hauntings, ghosts</h2>
-        <p>
-          <ul>
-            <li><a href="sketches/ghosts/repeating.html">repeating.html</a></li>
-            <li><a href="sketches/ghosts/doors-to-mirrors.html">doors-to-mirrors.html</a></li>
-          </ul>
-        </p>
-      </section>
-      <hr />
-      <section class="section">
-        <h2 class="h3">ca(p)tchas</h2>
-        <p>
-          <ul>
-            <li><a href="sketches/catcha/verification.html">verification.html</a> (variations: <a href="sketches/catcha/verification.html?test=select">select</a>, <a href="sketches/catcha/verification.html?test=text">text</a>)</li>
-            <li><a href="sketches/catcha/puzzle.html">puzzle.html</a></li>
-            <li><a href="sketches/catcha/slide-article.html">slide-article.html</a></li>
-            <li><a href="sketches/catcha/select.html">select.html</a></li>
-            <li><a href="sketches/catcha/text.html">text.html</a></li>
-          </ul>
-        </p>
-      </section>
+      <div class="column with-border with-side-margin">
+        <h1><em>html sketches</em></h1>
+        <p>a sketchbook website full of website sketches ◕‿◕</p>
+        <hr />
+        <section class="section">
+          <h2 class="h3">httpoetics exercises</h2>
+          <p>
+            <ul>
+              <li><a href="sketches/poetics/badugly.html">badugly.html</a></li>
+              <li><a href="sketches/poetics/waytoobig.html">waytoobig.html</a></li>
+              <li><a href="sketches/poetics/unbutton.html">unbutton.html</a></li>
+              <li><a href="sketches/poetics/cursorplay.html">cursorplay.html</a></li>
+              <li><a href="sketches/poetics/verificationsounds.html">verificationsounds.html</a></li>
+              <li><a href="sketches/poetics/portals.html">portals.html</a></li>
+            </ul>
+          </p>
+        </section>
+        <hr />
+        <section class="section">
+          <h2 class="h3">folder party sketches</h2>
+          <p>
+            <ul>
+              <li><a href="sketches/folder-party/ascii.html">ascii.html</a></li>
+              <li><a href="sketches/folder-party/desktop.html">desktop.html</a></li>
+              <li><a href="sketches/folder-party/furniture.html">furniture.html</a></li>
+              <li><a href="sketches/folder-party/hand-drawn.html">hand-drawn.html</a></li>
+            </ul>
+          </p>
+        </section>
+        <hr />
+        <section class="section">
+          <h2 class="h3">games sketches</h2>
+          <p>
+            <ul>
+              <li><a href="sketches/gaming/movegrid.html">movegrid.html</a></li>
+              <li><a href="sketches/gaming/oceanvibe.html">oceanvibe.html</a></li>
+              <li><a href="sketches/gaming/websitevibe.html">websitevibe.html</a></li>
+              <li><a href="sketches/gaming/retrovibe.html">retrovibe.html</a></li>
+              <li><a href="sketches/gaming/storylineyarn.html">storylineyarn.html</a></li>
+              <li><a href="sketches/gaming/epilogue.html">epilogue.html</a></li>
+            </ul>
+          </p>
+        </section>
+        <section class="section">
+          <h2 class="h3">skillshare</h2>
+          <p>
+            <ul>
+              <li><a href="sketches/skillshare/islands.html">islands.html</a></li>
+            </ul>
+          </p>
+        </section>
+        <section class="section">
+          <h2 class="h3">hauntings, ghosts</h2>
+          <p>
+            <ul>
+              <li><a href="sketches/ghosts/repeating.html">repeating.html</a></li>
+              <li><a href="sketches/ghosts/doors-to-mirrors.html">doors-to-mirrors.html</a></li>
+            </ul>
+          </p>
+        </section>
+        <hr />
+        <section class="section">
+          <h2 class="h3">ca(p)tchas</h2>
+          <p>
+            <ul>
+              <li><a href="sketches/catcha/verification.html">verification.html</a> (variations: <a href="sketches/catcha/verification.html?test=select">select</a>, <a href="sketches/catcha/verification.html?test=text">text</a>)</li>
+              <li><a href="sketches/catcha/puzzle.html">puzzle.html</a></li>
+              <li><a href="sketches/catcha/slide-article.html">slide-article.html</a></li>
+              <li><a href="sketches/catcha/select.html">select.html</a></li>
+              <li><a href="sketches/catcha/text.html">text.html</a></li>
+            </ul>
+          </p>
+        </section>
+      </div>
+      <!-- an empty div for the column layout -->
+      <!-- maybe this is the day i learn css grid? -->
+      <div class="column-wrapper with-side-margin">
+        <section class="column with-border section">
+          <h2><em>server sketches</em></h2>
+          <p>sketches that require their own backend ☁･ﾟ✧</p>
+          <hr />
+          <p>
+            <ul>
+              <li><a href="https://trickster-server.onrender.com">trickster-server</a> (<a href="https://github.com/lizzthabet/html-sketches/tree/main/servers/trickster-server">README</a>)</li>
+              <li><a href="https://doors-to-doors.onrender.com">doors-to-doors</a> (<a href="https://github.com/lizzthabet/html-sketches/tree/main/servers/doors-to-doors">README</a>)</li>
+            </ul>
+          </p>
+        </section>
+        <section class="column with-border with-special-border with-top-margin">
+          <h2><em>collections</em></h2>
+          <p>tiny anthologies of polished html sketches</p>
+          <hr />
+          <p><em>coming soon</em></p>
+        </section>
+        <div>
+
+        </div>
+      </div>
     </main>
     <footer class="footer">
       <p>
-        this code lives on <a href="https://github.com/lizzthabet/html-sketches">github</a>
+        this code lives on <a href="https://github.com/lizzthabet/html-sketches/">github</a>
       </p>
       <p>
         xo <a href="https://lizz.website">lizz</a>
