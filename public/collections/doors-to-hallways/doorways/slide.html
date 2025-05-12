@@ -172,6 +172,7 @@
         color: white;
         cursor: pointer;
         font-size: 1.125rem;
+        height: 40px;
         padding: 10px 10px;
         display: block;
         margin: 35px 0 0 auto;
@@ -239,8 +240,9 @@
       const INITIAL_X_MIN = 100
       const INITIAL_X_MAX = 600
       const INITIAL_Y_MIN = 90
-      const INITIAL_Y_MAX = 440
+      const INITIAL_Y_MAX = 435
       const SHOW_NEXT_DELAY = 250
+      const DRIFT_INTERVAL = 300
       const PUZZLE_CONFIG = {
         "24": {
           "target": { "x":279, "y":276 },
@@ -300,15 +302,15 @@
         },
         "12": {
           "target": { "x":406, "y":404 },
-          "direction": ["left", "bottom"]
+          "direction": ["left", "bottom", "rotate"]
         },
         "19": {
           "target": { "x":266, "y":354 },
-          "direction": ["right", "bottom"]
+          "direction": ["right", "bottom", "rotate"]
         },
         "14": {
           "target": { "x":301.5, "y":403 },
-          "direction": ["right", "top"]
+          "direction": ["right", "top", "rotate"]
         },
         "13": {
           "target": { "x":328.5, "y":418 },
@@ -320,19 +322,22 @@
         },
         "1": {
           "target": { "x":469, "y":340 },
-          "direction": ["left", "bottom", "rotate"]
+          "direction": ["left", "bottom"],
+          "drift": true,
         },
         "4": {
           "target": { "x":445, "y":152 },
-          "direction": ["right", "bottom", "rotate"]
+          "direction": ["right", "bottom"],
+          "drift": true,
         },
         "2": {
           "target": { "x":469.5, "y":229.5 },
-          "direction": ["left", "bottom", "rotate"]
+          "direction": ["left", "bottom"],
+          drift: true,
         },
         "8": {
           "target": { "x":469, "y":116 },
-          "direction": ["right", "bottom"],
+          "direction": ["right", "bottom", "rotate"],
           "drift": true
         },
         "7": {
@@ -664,6 +669,9 @@
           return
         }
 
+        // Make sure that previous drift is cleared
+        stopDrift()
+
         if (type === "reset") {
           const newDirections = []
           const hDirection = horizontalDirection(piece.direction)
@@ -675,12 +683,12 @@
             newDirections.push(vDirection)
           }
           driftDirection = newDirections
-          driftIntervalId = setInterval(() => setDrift(selectedId, driftDirection), 250)
+          driftIntervalId = setInterval(() => setDrift(selectedId, driftDirection), DRIFT_INTERVAL)
 
           return
         }
 
-        driftIntervalId = setInterval(() => setDrift(selectedId, driftDirection), 250)
+        driftIntervalId = setInterval(() => setDrift(selectedId, driftDirection), DRIFT_INTERVAL)
       }
 
       function stopDrift() {
@@ -752,7 +760,6 @@
           case "rotate":
             return setSlider(slider, 0, 360, 0)
         }
-
       }
 
       /** 
@@ -860,6 +867,8 @@
       // State
       /** @type {Queue} */
       const queue =  ["24", "20", "3", "21", "16", "23", "6", "5", "25", "10", "11", "17", "9", "12", "19", "14", "13", "15", "1", "4", "2", "8", "7", "22", "18", "26"]
+      // TODO: Both pieces 8 and 22 seem buggy when they're first displayed with the drift animation;
+      // their initial positions are both correct, so maybe something in the sequence configuration?
       /** @type {Pieces} */
       let pieces = {}
       let selectedId = ""
@@ -967,7 +976,6 @@
       <input id="slider-horizontal" class="slider slider-horizontal" type="range" value=0 step="5" aria-label="Move piece horizontally" />
       <button id="verify" class="verify-button" disabled>
         <span id="verify-text">Verify</span>
-        <!-- TODO: Size the button and loading state so it doesn't shift when this displays -->
         <img id="verify-loading" class="verify-loading hidden" src="../assets/loading-circle_large.svg"/>
       </button>
     </main>
