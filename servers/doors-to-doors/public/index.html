@@ -38,38 +38,27 @@
         transform: translateX(88px) skewX(20deg);
       }
 
-      @keyframes parallax-xy {
-        to {
-          transform: translate(-200px, 200px);
-        }
-      }
-
       .room, .room-center, .room-right, .room-left {
         box-shadow: 0px 10px 15px 0px rgb(149, 76, 42, 50%);
         margin: 0;
       }
 
       .room {
-        /* background-color: sienna; */
         background-color: #954c2a;
         filter: blur(2px) brightness(0.8);
+        transition: translate 1s ease;
         z-index: -4;
       }
 
       .room-center {
-        /* background-color: #996045; */
-        /* background-color: #954c2a; */
         background-color: #a55732;
         z-index: -3;
       }
 
       .room-right, .room-left {
-        /* background-color: #8a4727; */
         background-color: sienna;
         z-index: -2;
       }
-
-      /* top left, top right, bottom right, bottom left */
 
       .room.room-a {
         height: 600px;
@@ -233,32 +222,63 @@
 
     </style>
     <script>
+      // TODO: Add window resize listener to adjust element position (when they're in view)
+      const HORIZONTAL_SHIFT_PX = 200
+      const VERTICAL_SHIFT_PX = 200
+
+      function isInView(element) {
+        const { scrollX, scrollY, innerWidth, innerHeight } = window
+        const { top, left, width, height } = element.getBoundingClientRect()
+
+        // Calculate if two rectangles (room & window) overlap
+        const L1 = { x: left + scrollX, y: top + scrollY }
+        const R1 = { x: left + width + scrollX, y: top + height + scrollY }
+        const L2 = { x: scrollX, y: scrollY }
+        const R2 = { x: scrollX + innerWidth, y: scrollY + innerHeight }
+
+        const noOverlapOnLeft = L1.x > R2.x || L2.x > R1.x
+        // console.log(`${L1.x} > ${R2.x} || ${L2.x} > ${R1.x}`)
+        if (noOverlapOnLeft) {
+          return false
+        }
+        const noOverlapOnTop = R1.y < L2.y || R2.y < L1.y
+        // console.log(`${R1.y} < ${L2.y} || ${R2.y} < ${L1.y}`)
+        if (noOverlapOnTop) {
+          return false
+        }
+
+        return true
+      }
+
+      function calculateOffset(element) {
+        const { scrollX, scrollY, innerHeight, innerWidth } = window
+        const { top, left, width, height } = element.getBoundingClientRect()
+
+        // Calculate the center points for each element
+        const windowCenterX = (scrollX + innerWidth) / 2
+        const windowCenterY = (scrollY + innerHeight) / 2
+        const elementCenterX = (scrollX + left + width) / 2
+        const elementCenterY = (scrollY + top + height) / 2
+
+        // Then figure out the percentage offset the element is from the center
+        const offsetX = elementCenterX - windowCenterX
+        const offsetY = elementCenterY - windowCenterY
+
+        return {
+          translateX: (offsetX / innerWidth) * HORIZONTAL_SHIFT_PX,
+          translateY: (offsetY / innerHeight) * VERTICAL_SHIFT_PX
+        }
+      }
+
       /** @param {Element} element */
       function translateOnScroll(element) {
         /** @param {ScrollEvent} _event */
         return (_event) => {
-          const { scrollX, scrollY, innerHeight, innerWidth } = window
-          const { top, left, width, height } = element.getBoundingClientRect()
-
-          // Calculate the center points for each element
-          const windowCenterX = (scrollX + innerWidth) / 2
-          const windowCenterY = (scrollY + innerHeight) / 2
-          // will need to double-check this
-          const elementCenterX = left + width / 2
-          const elementCenterY = top + height / 2
-
-          // Then figure out the percentage offset the element is from the center
-          // TODO: parameritize the constants
-          const offsetX = elementCenterX - windowCenterX
-          const translateX = (offsetX / innerWidth) * 200 // just a fake number
-          const offsetY = elementCenterY - windowCenterY
-          const translateY = (offsetY / innerHeight) * 200 // just a fake number
-
+          const { translateX, translateY } = calculateOffset(element)
           requestAnimationFrame(() => {
             element.style.setProperty("transform", `translate(${translateX}px,${translateY}px)`)
           })
         }
-
       }
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -278,14 +298,19 @@
           shadow.style.setProperty("left", doorLeft + 3 + "px")
           shadow.style.setProperty("top", doorTop + 500 + "px")
 
-          // TODO: append to main or another element, not directly to body
-          document.body.append(shadow)
+          const parent = document.querySelector("main") ?? document.body
+          parent.append(shadow)
         })
 
+        // Create a parallax-like animation by offsetting the rooms
+        // with CSS transforms calculated with magic math
         const rooms = document.querySelectorAll("figure.room")
+        // Track the active scroll listeners so they can efficiently be
+        // added and removed based on whether the element is visible
         const scrollListeners = {}
+        // Set up a callback for firing when elements are in the viewport
+        // or disappear from the viewport
         const intersect = new IntersectionObserver((entries) => {
-          // This only emits for the items that have changed! So I should store listeners differently
           entries.forEach((e, i) => {
             const { target, isIntersecting } = e
             // This assumes that each element has a unique class list (which is true for now)
@@ -304,11 +329,19 @@
           })
         })
 
-        rooms.forEach((element) => intersect.observe(element))
 
-        // TODO: Any element that is in the viewport (like on first load or page refresh)
-        // will experience a jump when the first scroll happens, because the translate isn't
-        // applied to the initial position
+        rooms.forEach((element) => {
+          // Add element to the intersection observer callback
+          intersect.observe(element)
+
+          // Adjust the perspective shift on page load to avoid
+          // a drastic jump when scrolling begins
+          if (isInView(element)) {
+            // TODO: It seems like this is ~3px off on initial load
+            const { translateX, translateY } = calculateOffset(element)
+            element.style.setProperty("transform", `translate(${translateX}px,${translateY}px)`)
+          }
+        })
       })
     </script>
   </head>
