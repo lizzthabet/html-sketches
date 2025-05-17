@@ -16,4 +16,4 @@ this code bucket uses a simple http server, websockets, and nodemon to automatic
 
 loosely, this sketchbook is divided into two pieces:
   * `public` directory includes sketches that can be served statically (without the need for a separate backend); these are published online at [sketches.lizz.website](https://sketches.lizz.website)
-  * `servers` directory includes sketches that include code that runs outside of the browser; these aren't currently published online and can only be run locally
+  * `servers` directory includes sketches that include code that runs outside of the browser; these are (sometimes? always? whenever i feel like it?) deployed as separate sites on render and their links are published at the same site above
