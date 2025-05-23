@@ -50,14 +50,15 @@
       }
       
       .shadow-left {
-        left: var(--frame-space-between);
+        left: max(var(--body-margin), var(--frame-space-between));
         /* translate x is purely hardcoded atm */
         transform: translateX(-73px) skewX(340deg);
       }
 
       .shadow-right {
         /* genuinely stumped by the 319px, which should be 329px */
-        left: calc(var(--frame-space-between) * 2 + 319px);
+        --fluid-left: calc(var(--frame-space-between) * 2 + 319px);
+        left: max(293px, var(--fluid-left));
         transform: translateX(73px) skewX(20deg);
       }
 
@@ -66,10 +67,10 @@
       }
 
       .door-exit {
-        left: 100vw; /* just out of view */
+        left: 89vw; /* just out of view */
         padding: 32px;
         position: absolute;
-        top: 110vh; /* just out of view */
+        top: 0;
         height: calc(var(--exit-height) + var(--frame-border));
         width: calc(var(--exit-width) + var(--frame-border));;
       }
@@ -92,8 +93,8 @@
         /* position the dialog next to the exit sign */
         margin: 0;
         position: absolute;
-        top: max(0px, calc(110vh - (285px / 2)));
-        left: max(0px, calc(100vw - 445px));
+        top: 15px;
+        left: max(15px, calc(89vw - 445px));
       }
 
       .verification::backdrop {
@@ -107,12 +108,35 @@
         width: 100%;
       }
 
+      .mobile {
+        display: none;
+      }
+
+      .banner {
+        background-color: #2929b4;
+        box-sizing: border-box;
+        color: white;
+        left: 0;
+        padding: 1rem;
+        position: fixed;
+        top: 0;
+        width: 100%;
+      }
+
+      @media screen and (max-width: 600px) {
+        .mobile {
+          display: block;
+        }
+      }
+
     </style>
     <script>
       const MOUSE_TRACE = "MouseTrace"
       const MOUSE_MOVE = "MouseMove"
       const MOUSE_ENTER = "MouseEnter"
       const MOUSE_LEAVE = "MouseLeave"
+      const GHOST_APPEAR = "GhostAppear"
+      const GHOST_EVADE = "GhostEvade"
       const EXIT = "DoorExit"
       const VERIFIED = "CaptchaVerified"
 
@@ -133,6 +157,8 @@
           case MOUSE_ENTER:
             const receiver = source ? receivers[source.name] : undefined
             return !!receiver
+          case GHOST_APPEAR:
+          case GHOST_EVADE:
           case MOUSE_TRACE:
           case MOUSE_MOVE:
             const receiverFound = source ? receivers[source.name] : undefined
@@ -186,21 +212,17 @@
 
           switch(e.data.type) {
             // Mouse events are proxied from one window to another
-            case MOUSE_TRACE:
-              const traceReceiver = sourceToReceiver[e.source.name]
-              send(traceReceiver, { type: MOUSE_TRACE, x: e.data.x, y: e.data.y })
-              return
+            case GHOST_APPEAR:
+            case GHOST_EVADE:
             case MOUSE_MOVE:
-              const moveReceiver = sourceToReceiver[e.source.name]
-              send(moveReceiver, { type: MOUSE_MOVE, x: e.data.x, y: e.data.y })
-              return
-            case MOUSE_LEAVE:
-              const leaveReceiver = sourceToReceiver[e.source.name]
-              send(leaveReceiver, { type: MOUSE_LEAVE })
+            case MOUSE_TRACE:
+              const coordReceiver = sourceToReceiver[e.source.name]
+              send(coordReceiver, { type: e.data.type, x: e.data.x, y: e.data.y })
               return
             case MOUSE_ENTER:
-              const enterReceiver = sourceToReceiver[e.source.name]
-              send(enterReceiver, { type: MOUSE_ENTER })
+            case MOUSE_LEAVE:
+              const eventReceiver = sourceToReceiver[e.source.name]
+              send(eventReceiver, { type: e.data.type })
               return
             // Verification events are processed from child windows
             case EXIT:
@@ -216,6 +238,7 @@
     </script>
   </head>
   <body>
+    <aside class="banner mobile"><em>psst</em>, this site is built with computer mice in mind and is best viewed on a desktop browser</aside>
     <iframe id="one" name="one" class="door-frame" title="door frame to mirror" src="doorways/mirror.html"></iframe>
     <figure class="shadow shadow-left" role="presentation"></figure>
     <iframe id="two" name="two" class="door-frame" title="door frame to mirror" src="doorways/mirror.html"></iframe>

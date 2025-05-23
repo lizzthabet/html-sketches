@@ -41,13 +41,22 @@
         position: absolute;
         width: 35px;
       }
+
+      .ghost {
+        font-size: 1rem;
+        margin: 0;
+        padding: calc(35px / 2);
+        position: absolute;
+        text-shadow: 0px 0px 5px white;
+      }
     </style>
     <script>
       const MOUSE_TRACE = "MouseTrace"
       const MOUSE_MOVE = "MouseMove"
       const MOUSE_ENTER = "MouseEnter"
       const MOUSE_LEAVE = "MouseLeave"
-      const DO_NOT_HAUNT = ["mirror"]
+      const GHOST_APPEAR = "GhostAppear"
+      const GHOST_EVADE = "GhostEvade"
 
       function place(element, x, y) {
         if (!element) {
@@ -56,6 +65,65 @@
 
         element.style.setProperty("top", y + "px")
         element.style.setProperty("left", x + "px")
+      }
+
+      function evade(element, x, y) {
+        const { top, left, right, bottom } = ghost.getBoundingClientRect()
+        const xOnGhost = x >= left && x <= right
+        const yOnGhost = y >= top && y <= bottom
+        if (xOnGhost && yOnGhost) {
+          // TODO: Instead of implicitly relying on the imported script, emit an event instead
+          onMouseMove(
+            new MouseEvent("MouseMove", { clientX: x, clientY: y }),
+            element,
+          )
+
+          // See if the ghost has moved on from this plane to the next
+          const {
+            top: newTop,
+            left: newLeft,
+            right: newRight,
+            bottom: newBottom,
+            height,
+            width
+          } = ghost.getBoundingClientRect()
+          const { innerHeight, innerWidth } = window;
+
+          const halfWidth = 0.5 * width
+          const halfHeight = 0.5 * height
+          const xCenter = newLeft + halfWidth
+          const yCenter = newTop + halfHeight
+          const isOutsideFrame = yCenter <= 0 || yCenter >= innerHeight || xCenter <= 0 || xCenter >= innerWidth
+          if (isOutsideFrame) {
+            const mirrorX = mirror(xCenter, 0, innerWidth) - halfWidth
+            const mirrorY = mirror(yCenter, 0, innerHeight) - halfHeight
+            // TODO: Consider hiding the ghost when it crosses this threshold
+            window.parent.postMessage({
+              type: GHOST_APPEAR,
+              x: mirrorX,
+              y: mirrorY,
+            })
+          }
+        }
+      }
+
+      /**
+       * Mirror flips a coordinate `n` when it exceeds a minimum or maximum range;
+       * eg. when n = -5, min = 0, max = 100, then n is flipped to 95, or
+       * when n = 110 (with the same min max), then n is flipped to 10.
+       * For this use, `n` will be the middle point of an element, and it'll
+       * be translated back to (left, top) coordinates after mirroring.
+       */
+      function mirror(n, min, max) {
+        if (n <= min) {
+          return max - Math.abs(min - n)
+        }
+
+        if (n >= max) {
+          return min + Math.abs(n - max)
+        }
+
+        return n
       }
 
       function leaveCursor(x, y) {
@@ -67,29 +135,18 @@
         return element
       }
 
-      function toMark(e) {
+      function mark(e) {
         const { pageX, pageY } = e
         const x = leaveCursor(pageX, pageY)
         document.body.appendChild(x)
       }
 
-      function toPublish(e) {
+      function publish(e) {
         window.parent.postMessage({
           type: MOUSE_TRACE,
           x: e.pageX,
           y: e.pageY,
         })
-      }
-
-      function waitByVolume(action, volume) {
-        let count = 0
-        return (toActOn) => {
-          count++
-          if (count === volume) {
-            count = 0
-            action(toActOn)
-          }
-        }
       }
 
       function waitByTime(action, time) {
@@ -115,9 +172,7 @@
         }
       }
 
-      const hauntOverThere = waitByTime(toPublish, 100)
-      const haunted = waitByTime(toMark, 100)
-      const haunting = waitByVolume(toMark, 60)
+      const hauntOverThere = waitByTime(publish, 100)
       document.addEventListener("DOMContentLoaded", () => {
         const mirror = document.getElementById("mirror")
         if (mirror) {
@@ -129,6 +184,8 @@
             })
           })
           mirror.addEventListener("mouseleave", (e) => {
+            // TODO: Overlapping the lil ghost triggers hiding the mouse;
+            // this shouldn't happen :)
             window.parent.postMessage({
               type: MOUSE_LEAVE,
             })
@@ -141,13 +198,13 @@
         }
 
         const warped = document.getElementById("warped")
+        const ghost = document.getElementById("ghost")
 
         window.addEventListener("message", (e) => {
           if (e.origin !== window.origin || !e.data) {
             return
           }
 
-          // TODO: Add more event payload validation
           if (e.data.type === MOUSE_TRACE) {
             const x = leaveCursor(e.data.x, e.data.y)
             document.body.appendChild(x)
@@ -164,14 +221,36 @@
           if (e.data.type === MOUSE_LEAVE) {
             show(warped, false)
           }
+
+          if (e.data.type === GHOST_EVADE) {
+            evade(ghost, e.data.x, e.data.y)
+          }
+
+          if (e.data.type === GHOST_APPEAR) {
+            place(ghost, e.data.x, e.data.y)
+          }
         })
 
         document.addEventListener("mousemove", (e) => {
-          e.stopPropagation()
-          const identifier = e.target.getAttribute("id") ?? ""
-          if (DO_NOT_HAUNT.includes(identifier)) {
+          const { pageX, pageY, target } = e
+
+          // Send all mouse events to the other window,
+          // since only that window knows when the ghost
+          // will flutter
+          window.parent.postMessage({
+            type: GHOST_EVADE,
+            x: pageX,
+            y: pageY,
+          })
+
+          // Do not haunt the mirror
+          const { top, left, right, bottom } = mirror.getBoundingClientRect()
+          const xOnMirror = pageX >= left && pageX <= right
+          const yOnMirror = pageY >= top && pageY <= bottom
+          if (xOnMirror && yOnMirror) {
             return
           }
+
           hauntOverThere(e)
         })
       })
@@ -180,11 +259,13 @@
   <body>
     <main class="wall">
       <figure id="mirror" class="mirror"></figure>
-      <img id="warped" class="cursor" style="display:none;" src="../assets/wavy.cur" />
+      <img id="warped" class="cursor" style="display:none;" src="../assets/wavy.cur" aria-label="reflected cursor"/>
+      <figure id="ghost" class="ghost" style="top: 45vh; left: 45vw;">👻</figure>
     </main>
     <!-- if you stay somewhere long enough, you can almost see yourself -->
     <!-- you can see yourself once you stop moving -->
     <!-- some mouse dandriff you create -->
     <!-- it's disorienting not to point -->
+     <script src="../evasive-elements.js" defer></script>
   </body>
 </html>
