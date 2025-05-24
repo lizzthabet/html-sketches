@@ -136,6 +136,7 @@
       const MOUSE_ENTER = "MouseEnter"
       const MOUSE_LEAVE = "MouseLeave"
       const GHOST_APPEAR = "GhostAppear"
+      const GHOST_EMERGE = "GhostEmerge"
       const GHOST_EVADE = "GhostEvade"
       const EXIT = "DoorExit"
       const VERIFIED = "CaptchaVerified"
@@ -153,11 +154,12 @@
         const { type } = data
 
         switch (type) {
+          case GHOST_APPEAR:
           case MOUSE_LEAVE:
           case MOUSE_ENTER:
             const receiver = source ? receivers[source.name] : undefined
             return !!receiver
-          case GHOST_APPEAR:
+          case GHOST_EMERGE:
           case GHOST_EVADE:
           case MOUSE_TRACE:
           case MOUSE_MOVE:
@@ -205,6 +207,7 @@
           two: frameOne,
         }
 
+        let ghostHasAppeared = false
         window.addEventListener("message", (e) => {
           if (!verify(e, sourceToReceiver)) {
             return
@@ -213,6 +216,13 @@
           switch(e.data.type) {
             // Mouse events are proxied from one window to another
             case GHOST_APPEAR:
+              if (!ghostHasAppeared) {
+                const appearReceiver = e.source.name === "one" ? frameOne : frameTwo
+                send(appearReceiver, { type: e.data.type })
+                ghostHasAppeared = true
+              }
+              return
+            case GHOST_EMERGE:
             case GHOST_EVADE:
             case MOUSE_MOVE:
             case MOUSE_TRACE:
