@@ -28,6 +28,7 @@
         flex-wrap: nowrap;
         justify-content: space-evenly;
         text-align: center;
+        overflow-y: hidden;
       }
 
       iframe.door-frame {
@@ -56,8 +57,8 @@
       }
 
       .shadow-right {
-        /* genuinely stumped by the 319px, which should be 329px */
-        --fluid-left: calc(var(--frame-space-between) * 2 + 319px);
+        /* use 319px if vertical scroll bar */
+        --fluid-left: calc(var(--frame-space-between) * 2 + 329px);
         left: max(293px, var(--fluid-left));
         transform: translateX(73px) skewX(20deg);
       }
@@ -129,6 +130,11 @@
         }
       }
 
+      @media screen and (max-height: 700px) {
+        body {
+          overflow-y: unset;
+        }
+      }
     </style>
     <script>
       const MOUSE_TRACE = "MouseTrace"
