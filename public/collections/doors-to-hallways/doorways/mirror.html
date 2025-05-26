@@ -26,7 +26,9 @@
         border-radius: 75px 75px 0 0;
         height: 300px;
         margin: 0;
+        position: relative;
         width: 175px;
+        z-index: 2;
       }
 
       .once {
@@ -34,12 +36,14 @@
         width: 35px;
         opacity: 0.2;
         user-select: none;
+        z-index: 1;
       }
 
       .cursor {
         height: 35px;
         position: absolute;
         width: 35px;
+        z-index: 3;
       }
 
       .ghost {
@@ -48,6 +52,7 @@
         padding: calc(35px / 2);
         position: absolute;
         text-shadow: 0px 0px 5px white;
+        z-index: 4;
       }
 
       .emerging {
@@ -178,6 +183,50 @@
         return n
       }
 
+      function area(x1, y1, x2, y2, x3, y3) {
+        return Math.abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2
+      }
+
+      function pointInTriangle(p1, p2, x1, y1, x2, y2, x3, y3) {
+        const triangleArea = area(x1, y1, x2, y2, x3, y3)
+        const a1 = area(p1, p2, x2, y2, x3, y3)
+        const a2 = area(x1, y1, p1, p2, x3, y3)
+        const a3 = area(x1, y1, x2, y2, p1, p2)
+        return triangleArea === (a1 + a2 + a3)
+      }
+
+      function overlaps(mirror, x, y) {
+        if (!mirror) {
+          return false
+        }
+        const { top, left, right, bottom } = mirror.getBoundingClientRect()
+
+        // Imprecise math that considers the two top rounded corners of the mirror
+        // as triangles and ignores mouse coordinates within those triangles
+        if (y >= top && y <= top + 75) {
+          // Check overlap with left corner
+          const leftRadius = 75 // Based on border radius
+          if (x >= left && x <= left + leftRadius) {
+            const mouseInRoundedCorner = pointInTriangle(x, y, left, top, left + leftRadius, top, left, top + leftRadius)
+            if (mouseInRoundedCorner) {
+              return false
+            }
+          }
+          // Check overlap with right corner
+          const rightRadius = 60 // Extremely fuzzy math to account for cursor width
+          if (x >= right - rightRadius && x <= right) {
+            const mouseInRoundedCorner = pointInTriangle(x, y, right, top, right - rightRadius, top, right, top + rightRadius)
+            if (mouseInRoundedCorner) {
+              return false
+            }
+          }
+        }
+
+        const xOverlaps = x >= left && x <= right
+        const yOverlaps = y >= top && y <= bottom
+        return xOverlaps && yOverlaps
+      }
+
       function leaveCursor(x, y) {
         const element = document.createElement("img")
         element.setAttribute("src", "../assets/normal.cur")
@@ -227,28 +276,6 @@
       const hauntOverThere = waitByTime(trace, 100)
       document.addEventListener("DOMContentLoaded", () => {
         const mirror = document.getElementById("mirror")
-        if (mirror) {
-          mirror.addEventListener("mousemove", (e) => {
-            window.parent.postMessage({
-              type: MOUSE_MOVE,
-              x: e.pageX,
-              y: e.pageY,
-            })
-          })
-          mirror.addEventListener("mouseleave", (e) => {
-            // TODO: Overlapping the lil ghost triggers hiding the mouse;
-            // this shouldn't happen :)
-            window.parent.postMessage({
-              type: MOUSE_LEAVE,
-            })
-          })
-          mirror.addEventListener("mouseenter", (e) => {
-            window.parent.postMessage({
-              type: MOUSE_ENTER,
-            })
-          })
-        }
-
         const warped = document.getElementById("warped")
         const ghost = document.getElementById("ghost")
 
@@ -295,27 +322,52 @@
 
         document.addEventListener("mousemove", initialize)
 
-        document.addEventListener("mousemove", (e) => {
-          const { pageX, pageY, target } = e
-
+        document.addEventListener("mousemove", (e) => { 
           // Send all mouse events to the other window,
           // since only that window knows when the ghost
           // will flutter
           window.parent.postMessage({
             type: GHOST_EVADE,
-            x: pageX,
-            y: pageY,
+            x: e.pageX,
+            y: e.pageY,
           })
+        })
 
-          const { top, left, right, bottom } = mirror.getBoundingClientRect()
-          const xOnMirror = pageX >= left && pageX <= right
-          const yOnMirror = pageY >= top && pageY <= bottom
-          // Do not haunt the mirror
-          if (xOnMirror && yOnMirror) {
+        // Use mouse coordinates, rather than listening to mouse events
+        // on specific elements, to determine which events should fire.
+        let lastPositionOverMirror = false
+        document.addEventListener("mousemove", (e) => {
+          if (!mirror) {
             return
           }
 
-          hauntOverThere(e)
+          const midpointX = e.pageX + 35 / 2
+          const midpointY = e.pageY + 35 / 2
+          const overMirror = overlaps(mirror, midpointX, midpointY)
+          // const overMirror = overlaps(mirror, e.pageX, e.pageY)
+          if (overMirror && !lastPositionOverMirror) {
+            window.parent.postMessage({
+              type: MOUSE_ENTER,
+            })
+          }
+
+          if (!overMirror && lastPositionOverMirror) {
+            window.parent.postMessage({
+              type: MOUSE_LEAVE,
+            })
+          }
+
+          if (overMirror) {
+            lastPositionOverMirror = true
+            window.parent.postMessage({
+              type: MOUSE_MOVE,
+              x: e.pageX,
+              y: e.pageY,
+            })
+          } else {
+            lastPositionOverMirror = false
+            hauntOverThere(e)
+          }
         })
       })
     </script>
