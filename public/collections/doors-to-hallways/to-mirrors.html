@@ -144,10 +144,26 @@
       const GHOST_APPEAR = "GhostAppear"
       const GHOST_EMERGE = "GhostEmerge"
       const GHOST_EVADE = "GhostEvade"
+      const GHOST_CLICK = "GhostClick"
       const EXIT = "DoorExit"
       const VERIFIED = "CaptchaVerified"
 
-      function verify(event, receivers) {
+      function hasReceiver(receiverMap, source) {
+        if (!source) {
+          return false
+        }
+         return !!receiverMap[source.name]
+      }
+
+      function hasXY(data) {
+        return Number.isFinite(data.x) && Number.isFinite(data.y)
+      }
+
+      function hasID(data) {
+        return typeof data.ghostId === "string"
+      }
+
+      function verify(event, receivers, sameReceivers) {
         if (!event || event.origin !== window.origin) {
           return false
         }
@@ -161,18 +177,17 @@
 
         switch (type) {
           case GHOST_APPEAR:
+            return hasReceiver(sameReceivers, source)
           case MOUSE_LEAVE:
           case MOUSE_ENTER:
-            const receiver = source ? receivers[source.name] : undefined
-            return !!receiver
-          case GHOST_EMERGE:
+            return hasReceiver(receivers, source)
+          case GHOST_CLICK:
           case GHOST_EVADE:
           case MOUSE_TRACE:
           case MOUSE_MOVE:
-            const receiverFound = source ? receivers[source.name] : undefined
-            const xIsNumber = Number.isFinite(data.x)
-            const yIsNumber = Number.isFinite(data.y)
-            return !!receiverFound && xIsNumber && yIsNumber
+            return hasReceiver(receivers, source) && hasXY(data)
+          case GHOST_EMERGE:
+            return hasReceiver(receivers, source) && hasXY(data) && hasID(data)
           case EXIT:
           case VERIFIED:
             return true
@@ -213,9 +228,14 @@
           two: frameOne,
         }
 
+        const sameSourceReceiver = {
+          one: frameOne,
+          two: frameTwo,
+        }
+
         let ghostHasAppeared = false
         window.addEventListener("message", (e) => {
-          if (!verify(e, sourceToReceiver)) {
+          if (!verify(e, sourceToReceiver, sameSourceReceiver)) {
             return
           }
 
@@ -223,12 +243,17 @@
             // Mouse events are proxied from one window to another
             case GHOST_APPEAR:
               if (!ghostHasAppeared) {
-                const appearReceiver = e.source.name === "one" ? frameOne : frameTwo
+                const appearReceiver = sameSourceReceiver[e.source.name]
                 send(appearReceiver, { type: e.data.type })
                 ghostHasAppeared = true
               }
               return
             case GHOST_EMERGE:
+              const emergeReceiver = sourceToReceiver[e.source.name]
+              console.log("from parent window, bouncing with id:", e.data.ghostId)
+              send(emergeReceiver, { type: e.data.type, x: e.data.x, y: e.data.y, ghostId: e.data.ghostId })
+              return
+            case GHOST_CLICK:
             case GHOST_EVADE:
             case MOUSE_MOVE:
             case MOUSE_TRACE:
