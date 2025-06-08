@@ -52,6 +52,7 @@
         padding: calc(35px / 2);
         position: absolute;
         text-shadow: 0px 0px 5px white;
+        user-select: none;
         z-index: 4;
       }
 
@@ -101,6 +102,10 @@
       const GHOST_EVADE = "GhostEvade"
       const GHOST_CLICK = "GhostClick"
 
+      const REANIMATE_MS = 3000
+      const REANIMATE_AFTER_EMERGE_MS = REANIMATE_MS * 5
+      const SPAWN_GHOST_MS = 1000
+
       const reanimateTimers = {}
 
       function place(element, x, y) {
@@ -120,11 +125,9 @@
         document.removeEventListener("mousemove", initialize)
       }
 
-      // TODO: standardize this func's interface with `place()`
-      function apparition(ghost, top, left) {
+      function apparition(ghost, x, y) {
         if (ghost) {
-          ghost.style.setProperty("top", top)
-          ghost.style.setProperty("left", left)
+          place(ghost, x, y)
           ghost.classList.remove("emerging")
           ghost.classList.add("floating-after-emerging")
         }
@@ -132,9 +135,7 @@
 
       function evadeAll(elements, x, y) {
         elements.forEach(e => {
-          if (e.checkVisibility({ opacityProperty: true })) {
-            evade(e, x, y)
-          }
+          evade(e, x, y)
         })
       }
 
@@ -170,7 +171,7 @@
             reanimateTimers[element.id] = setTimeout(() => {
               element.classList.add("floating")
               delete reanimateTimers[element.id]
-            }, 2000)
+            }, REANIMATE_MS)
           })
 
           // See if the ghost has moved on from this plane to the next
@@ -190,11 +191,12 @@
           const yCenter = newTop + halfHeight
           const isOutsideFrame = yCenter <= 0 || yCenter >= innerHeight || xCenter <= 0 || xCenter >= innerWidth
           if (isOutsideFrame) {
-            const mirrorX = mirror(xCenter, 0, innerWidth) - halfWidth
-            const mirrorY = mirror(yCenter, 0, innerHeight) - halfHeight
+            // Mirror each coordinate, plus offset (minus padding) to make sure
+            // ghost is in frame, then recenter the top and left coordinates
+            const mirrorX = mirror(xCenter, 0, innerWidth, halfWidth - 15) - halfWidth
+            const mirrorY = mirror(yCenter, 0, innerHeight, halfHeight - 15) - halfHeight
             // Hide the ghost now that it's off frame
             show(element, false)
-            console.log("sending with id:", element.id)
             window.parent.postMessage({
               type: GHOST_EMERGE,
               x: mirrorX,
@@ -212,13 +214,13 @@
        * For this use, `n` will be the middle point of an element, and it'll
        * be translated back to (left, top) coordinates after mirroring.
        */
-      function mirror(n, min, max) {
+      function mirror(n, min, max, offset = 0) {
         if (n <= min) {
-          return max - Math.abs(min - n)
+          return (max - Math.abs(min - n)) - offset
         }
 
         if (n >= max) {
-          return min + Math.abs(n - max)
+          return (min + Math.abs(n - max)) + offset
         }
 
         return n
@@ -320,12 +322,12 @@
           const xOverlaps = clickX >= left && clickX <= right
           const yOverlaps = clickY >= top && clickY <= bottom
           if (xOverlaps && yOverlaps) {
-            const spawned = spawn(g, `ghost-${ghosts.length + 1}`)
+            const spawned = spawn(g, `ghost-${ghosts().length + 1}`)
             setTimeout(() => {
-              const randomTop = `${Math.random() * window.innerHeight}px`
-              const randomLeft = `${Math.random() * window.innerWidth}px`
-              apparition(spawned, randomTop, randomLeft)
-            }, 1000)
+              const randomTop = Math.random() * window.innerHeight
+              const randomLeft = Math.random() * window.innerWidth
+              apparition(spawned, randomLeft, randomTop)
+            }, SPAWN_GHOST_MS)
           }
         })
       }
@@ -372,26 +374,25 @@
 
           if (e.data.type === GHOST_APPEAR) {
             setTimeout(() => {
-              apparition(ghost, "45vh", "45vw")
+              apparition(ghost, 145, 290)
             }, 1000)
           }
 
           if (e.data.type === GHOST_EMERGE) {
-            const ghostId = e.data.ghostId
-            const foundGhost = ghostId ? document.getElementById(ghostId) : ghost
-            // console.log("emerging with id:", ghostId, "found ghost?", foundGhost)
-            if (!foundGhost) {
-              const newGhost = spawn(ghost, ghostId)
-              place(newGhost, e.data.x, e.data.y)
-            } else {
-              foundGhost.classList.remove("emerging")
-              foundGhost.classList.remove("floating")
-              foundGhost.classList.remove("floating-after-emerging")
-              place(foundGhost, e.data.x, e.data.y)
-              show(foundGhost, true)
+            let emergingGhost = document.getElementById(e.data.ghostId)
+            if (!emergingGhost) {
+              emergingGhost = spawn(ghost, e.data.ghostId)
             }
 
-            // TODO: Start floating animation again
+            place(emergingGhost, e.data.x, e.data.y)
+            show(emergingGhost, true)
+            emergingGhost.classList.remove("emerging", "floating", "floating-after-emerging")
+
+            // If it's not evading the mouse anymore, make it float again
+            reanimateTimers[emergingGhost.id] = setTimeout(() => {
+              emergingGhost.classList.add("floating")
+              delete reanimateTimers[emergingGhost.id]
+            }, REANIMATE_AFTER_EMERGE_MS)
           }
 
           if (e.data.type === GHOST_EVADE) {
@@ -417,7 +418,7 @@
         })
 
         document.addEventListener("click", (e) => {
-          // Send all mouse events to the other window,
+          // Send all click events to the other window,
           // since only that window knows when the ghost
           // is clicked
           window.parent.postMessage({

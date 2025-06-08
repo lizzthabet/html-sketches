@@ -250,7 +250,6 @@
               return
             case GHOST_EMERGE:
               const emergeReceiver = sourceToReceiver[e.source.name]
-              console.log("from parent window, bouncing with id:", e.data.ghostId)
               send(emergeReceiver, { type: e.data.type, x: e.data.x, y: e.data.y, ghostId: e.data.ghostId })
               return
             case GHOST_CLICK:
